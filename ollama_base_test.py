@@ -12,7 +12,7 @@ print(res['message']['content'])
 
 print ("------ Image LLM ------")
 res = client.chat(
-	model="llava",
+	model="llava:34b",
 	messages=[
 		{
 			'role': 'user',
