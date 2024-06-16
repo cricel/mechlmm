@@ -11,19 +11,38 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
-from langchain_core.runnables import RunnableSequence
+
+from langchain_community.document_loaders import DirectoryLoader
+from langchain_community.document_loaders import TextLoader
+
+from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_retrieval_chain
+
+
+from langchain_community.embeddings.sentence_transformer import (
+    SentenceTransformerEmbeddings,
+)
+from langchain_text_splitters import CharacterTextSplitter
 
 import uuid
 from langchain_postgres import PostgresChatMessageHistory
 import psycopg
 
-
 import os
 import base64
 
-class LLMCore:
-    def __init__(self, llm_server):
+from datetime import datetime
 
+class LLMCore:
+    def __init__(self, llm_server = None):
+        self.init_llm_server(llm_server)
+        self.init_llm_db()
+        self.init_llm_document_loader()
+        self.init_llm_chain()
+    
+    def init_llm_server(self, llm_server):
         if(llm_server == "openai"):
             os.environ["OPENAI_API_KEY"] = "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"
             self.llm_base = ChatOpenAI(model_name="gpt-4-vision-preview", max_tokens=1024)
@@ -32,7 +51,7 @@ class LLMCore:
         else:
             self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
 
-
+    def init_llm_db(self):
         conn_info = "postgresql://postgres:qwepoi123@localhost:5432/llm-smart-home"
         sync_connection = psycopg.connect(conn_info)
         table_name = "chat_history"
@@ -42,12 +61,69 @@ class LLMCore:
         session_id = "4eaab6aa-aefe-4ec7-a311-eb4acbd4b34a"
         print("Your Current Conversion Session ID: " + session_id)
 
-        chat_history = PostgresChatMessageHistory(
+        self.chat_history = PostgresChatMessageHistory(
             table_name,
             session_id,
             sync_connection=sync_connection
         )
 
+    def init_llm_document_loader(self):
+        loader = TextLoader("./data/raw_conversion.txt")
+        documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter()
+        docs = text_splitter.split_documents(documents)
+        embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+
+        db = FAISS.from_documents(docs, embeddings)
+        retriever = db.as_retriever()
+
+        system_prompt = (
+            "You are an assistant for question-answering tasks. "
+            "Use the following pieces of retrieved context to answer "
+            "Use three sentences maximum and keep the answer concise."
+            "\n\n"
+            "{context}"
+        )
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
+            ]
+        )
+
+        question_answer_chain = create_stuff_documents_chain(self.llm_base, prompt)
+        self.rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+        # prompt_template = ChatPromptTemplate.from_messages(
+        #     [
+        #         SystemMessage(
+        #             content = system_prompt
+        #         ),
+        #         MessagesPlaceholder(
+        #             variable_name="chat_history"
+        #         ),
+        #         HumanMessagePromptTemplate.from_template(
+        #             "{input}"
+        #         ),
+        #     ]
+        # )
+
+        # memory = ConversationBufferMemory(
+        #     memory_key="chat_history", 
+        #     return_messages=True,
+        #     chat_memory=self.chat_history
+        #     )
+
+        # question_answer_chain = create_stuff_documents_chain(
+        #     llm=self.llm_base,
+        #     prompt=prompt_template,
+        #     memory=memory,
+        # )
+
+        # self.rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+    def init_llm_chain(self):
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(
@@ -65,7 +141,7 @@ class LLMCore:
         memory = ConversationBufferMemory(
             memory_key="chat_history", 
             return_messages=True,
-            chat_memory=chat_history
+            chat_memory=self.chat_history
             )
 
         self.llm_chain = LLMChain(
@@ -76,6 +152,9 @@ class LLMCore:
 
     def ask_txt(self, _msg):
         return self.llm_chain.invoke(_msg)["text"]
+    
+    def ask_document(self, _msg):
+        return self.rag_chain.invoke({"input": _msg})["answer"]
     
     def ask_img(self, _msg, _img_path):
         image = self.encode_image(_img_path)
@@ -106,8 +185,13 @@ class LLMCore:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
 if __name__ == "__main__":
-    llm_core = LLMCore("ollama")
-    print(llm_core.ask_txt("what is my name, and what do I like"))
+    llm_core = LLMCore("openai")
+
+    print("==== test conversion =====")
+    print(llm_core.ask_document(f"current timestamp is {datetime.now()}. Give me a actionable task list break down into a table for Chandler with when, where and what. give me timestamp in ['yyyy'-'MM'-'dd HH':'mm':'ss'] format if applied, not necessary to set every task with timestamp"))
+    # print("------")
+    # print(llm_core.ask_txt("what is my name, and what do I like"))
+
     # print("------")
     # print(llm_core.ask_txt("my name is shawn"))
     # print("------")
