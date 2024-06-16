@@ -1,4 +1,5 @@
 from langchain_community.llms import Ollama
+from langchain_openai import ChatOpenAI
 
 from langchain.chains import LLMChain
 from langchain.memory import ConversationBufferMemory
@@ -10,38 +11,47 @@ from langchain_core.prompts import (
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain_core.runnables import RunnableSequence
 
-from langchain_community.chat_message_histories import (
-    UpstashRedisChatMessageHistory,
-)
+import uuid
+from langchain_postgres import PostgresChatMessageHistory
+import psycopg
 
-from langchain_openai import ChatOpenAI
 
 import os
 import base64
 
 class LLMCore:
-    def __init__(self):
-        URL = "https://working-tadpole-41672.upstash.io"
-        TOKEN = "AaLIAAIncDFjMzRiOGEwOWZkMzk0ZWY5YmQ4YjZlNTY0Y2FhMjM2NnAxNDE2NzI"
+    def __init__(self, llm_server):
 
-        self.history = UpstashRedisChatMessageHistory(
-            url=URL,
-            token=TOKEN,
-            ttl=0, 
-            session_id="my-test-session"
+        if(llm_server == "openai"):
+            os.environ["OPENAI_API_KEY"] = "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"
+            self.llm_base = ChatOpenAI(model_name="gpt-4-vision-preview", max_tokens=1024)
+        elif(llm_server == "ollama"):
+            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
+        else:
+            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
+
+
+        conn_info = "postgresql://postgres:qwepoi123@localhost:5432/llm-smart-home"
+        sync_connection = psycopg.connect(conn_info)
+        table_name = "chat_history"
+        PostgresChatMessageHistory.create_tables(sync_connection, table_name)
+
+        # session_id = str(uuid.uuid4())
+        session_id = "4eaab6aa-aefe-4ec7-a311-eb4acbd4b34a"
+        print("Your Current Conversion Session ID: " + session_id)
+
+        chat_history = PostgresChatMessageHistory(
+            table_name,
+            session_id,
+            sync_connection=sync_connection
         )
 
-        self.ollama_llm = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
-
-        # os.environ["OPENAI_API_KEY"] = "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"
-        # self.ollama_llm = ChatOpenAI(model_name="gpt-4-vision-preview", max_tokens=1024)
-
-
-        self.prompt = ChatPromptTemplate.from_messages(
+        prompt_template = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(
-                    content="You are a smart home assistant AI and Your Name is Adam, you are having a conversion with the human"
+                    content="You are a smart home assistant AI and Your Name is Adam"
                 ),
                 MessagesPlaceholder(
                     variable_name="chat_history"
@@ -52,18 +62,17 @@ class LLMCore:
             ]
         )
 
-        self.memory = ConversationBufferMemory(
+        memory = ConversationBufferMemory(
             memory_key="chat_history", 
             return_messages=True,
-            chat_memory=self.history
+            chat_memory=chat_history
             )
 
         self.llm_chain = LLMChain(
-            llm=self.ollama_llm,
-            prompt=self.prompt,
-            memory=self.memory,
+            llm=self.llm_base,
+            prompt=prompt_template,
+            memory=memory,
         )
-        
 
     def ask_txt(self, _msg):
         return self.llm_chain.invoke(_msg)["text"]
@@ -97,6 +106,15 @@ class LLMCore:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
 if __name__ == "__main__":
-    llm_core = LLMCore()
-    print(llm_core.ask_txt("what is my name"))
+    llm_core = LLMCore("ollama")
+    print(llm_core.ask_txt("what is my name, and what do I like"))
+    # print("------")
+    # print(llm_core.ask_txt("my name is shawn"))
+    # print("------")
+    # print(llm_core.ask_txt("I like dog and cat"))
+    # print("------")
+    # print(llm_core.ask_txt("what is my name"))
+    # print("------")
+    # print(llm_core.ask_txt("what do I like"))
+    # print("------")
     # print(llm_core.ask_img("what is in the image", "./messy_room.jpg"))
