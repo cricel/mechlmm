@@ -188,7 +188,7 @@ if __name__ == "__main__":
     llm_core = LLMCore("openai")
 
     print("==== test conversion =====")
-    print(llm_core.ask_document(f"current timestamp is {datetime.now()}. Give me a actionable task list break down into a table for Chandler with when, where and what. give me timestamp in ['yyyy'-'MM'-'dd HH':'mm':'ss'] format if applied, not necessary to set every task with timestamp"))
+    print(llm_core.ask_document(f"current timestamp is {datetime.now()}. Give me a actionable task list break down into a table for Chandler with when, where, what and task status (if task is finished or not, if so, give timestamp when is done). give me timestamp in ['yyyy'-'MM'-'dd HH':'mm':'ss'] format if applied, not necessary to set every task with timestamp"))
     # print("------")
     # print(llm_core.ask_txt("what is my name, and what do I like"))
 
