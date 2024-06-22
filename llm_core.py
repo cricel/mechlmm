@@ -18,8 +18,8 @@ from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
 
+from langchain.chains import create_history_aware_retriever, create_retrieval_chain
 
 from langchain_community.embeddings.sentence_transformer import (
     SentenceTransformerEmbeddings,
@@ -47,9 +47,9 @@ class LLMCore:
             os.environ["OPENAI_API_KEY"] = "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"
             self.llm_base = ChatOpenAI(model_name="gpt-4-vision-preview", max_tokens=1024)
         elif(llm_server == "ollama"):
-            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
+            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llama3:70b")
         else:
-            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llava:34b")
+            self.llm_base = Ollama(base_url="http://131.123.41.132:11434", model="llama3:70b")
 
     def init_llm_db(self):
         conn_info = "postgresql://postgres:qwepoi123@localhost:5432/llm-smart-home"
@@ -94,6 +94,54 @@ class LLMCore:
 
         question_answer_chain = create_stuff_documents_chain(self.llm_base, prompt)
         self.rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+
+
+
+
+        # contextualize_q_system_prompt = (
+        #     "Given a chat history and the latest user question "
+        #     "which might reference context in the chat history, "
+        #     "formulate a standalone question which can be understood "
+        #     "without the chat history. Do NOT answer the question, "
+        #     "just reformulate it if needed and otherwise return it as is."
+        # )
+        # contextualize_q_prompt = ChatPromptTemplate.from_messages(
+        #     [
+        #         ("system", contextualize_q_system_prompt),
+        #         MessagesPlaceholder("chat_history"),
+        #         ("human", "{input}"),
+        #     ]
+        # )
+        # history_aware_retriever = create_history_aware_retriever(
+        #     self.llm_base, retriever, contextualize_q_prompt
+        # )
+
+
+        # system_prompt = (
+        #     "You are an assistant for question-answering tasks. "
+        #     "Use the following pieces of retrieved context to answer "
+        #     "the question. If you don't know the answer, say that you "
+        #     "don't know. Use three sentences maximum and keep the "
+        #     "answer concise."
+        #     "\n\n"
+        #     "{context}"
+        # )
+        # qa_prompt = ChatPromptTemplate.from_messages(
+        #     [
+        #         ("system", system_prompt),
+        #         MessagesPlaceholder("chat_history"),
+        #         ("human", "{input}"),
+        #     ]
+        # )
+        # question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+
+        # rag_chain = create_retrieval_chain(history_aware_retriever, question_answer_chain)
+
+
+
+
+
 
         # prompt_template = ChatPromptTemplate.from_messages(
         #     [
@@ -185,10 +233,13 @@ class LLMCore:
             return base64.b64encode(image_file.read()).decode('utf-8')
     
 if __name__ == "__main__":
-    llm_core = LLMCore("openai")
+    llm_core = LLMCore()
 
     print("==== test conversion =====")
     print(llm_core.ask_document(f"current timestamp is {datetime.now()}. Give me a actionable task list break down into a table for Chandler with when, where, what and task status (if task is finished or not, if so, give timestamp when is done). give me timestamp in ['yyyy'-'MM'-'dd HH':'mm':'ss'] format if applied, not necessary to set every task with timestamp"))
+
+    
+
     # print("------")
     # print(llm_core.ask_txt("what is my name, and what do I like"))
 
