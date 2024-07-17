@@ -1,16 +1,6 @@
-import json
+from dotenv import load_dotenv
+import os
 
-list = ["""function_call {
-  name: "dim_lights"
-  args {
-    fields {
-      key: "brightness"
-      value {
-        number_value: 0
-      }
-    }
-  }
-}"""
-]
+load_dotenv()
 
-print(json.dumps(list, indent=2))
+print(os.getenv('GEMINI_API_KEY'))

@@ -223,7 +223,7 @@ class GeminiCore:
 
     #endregion
 
-
+    ## LLM FunctionCalls Defination
     #region FunctionCalls
 
     # person = genai.protos.Schema(
@@ -293,7 +293,7 @@ class GeminiCore:
         self.post_ai_tasks_db(task_list)
 
         return True
-
+    
     def power_disco_ball(self, power: bool) -> bool:
         """Powers the spinning disco ball."""
         print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
@@ -325,47 +325,8 @@ class GeminiCore:
 
     #endregion
 
-    #region Tools
-
-    def process_raw_conversion_txt_to_db(self, _path):
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS daily_conversion;
-            """
-        )
-        self.db_conn.commit()
-
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS daily_conversion 
-                (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255),
-                    dialogue TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            """
-        )
-        self.db_conn.commit()
-
-        with open(_path, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if ':' in line and len(line.split(':')) == 2:
-                    key, value = line.split(':')
-
-                    self.db_cur.execute(
-                        """
-                            INSERT INTO daily_conversion (name, dialogue) VALUES
-                            (%s, %s);
-                        """, 
-                        (
-                            key.strip(), value.strip()
-                        )
-                    )
-                                
-        self.db_conn.commit()
-
+    ## DONT USE, Will confilct with the other code
+    #region OLD implementation [DONT USE]
     def process_raw_conversion_txt_to_db(self, _path):
         self.db_cur.execute(
             """
@@ -408,27 +369,27 @@ class GeminiCore:
                     )
                                 
         self.db_conn.commit()
-
-
     #endregion
 
 if __name__ == "__main__":
     gemini_core = GeminiCore()
     
-    # print(gemini_core.ask("How are you").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("what is my name").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("How many time have I asked you what is my name").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("My name is Shawn").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("Turn off the light").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("Tell me something about this picture", "./test_img.png").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("what is my name").strip())
-    # print("--------------------------------------------")
-    # print(gemini_core.ask("what is the current volume of the music").strip())
+    print(gemini_core.ask("How are you").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("what is my name").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("How many time have I asked you what is my name").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("My name is Shawn").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("Turn off the light").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("Tell me something about this picture", "./test_img.png").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("what is my name").strip())
+    print("--------------------------------------------")
+    print(gemini_core.ask("what is the current volume of the music").strip())
 
-    gemini_core.process_raw_conversion_txt_to_db("../data/raw_conversion.txt")
+    ## DONT Use, Will confilct with the other code
+    ## old implementation
+    # gemini_core.process_raw_conversion_txt_to_db("../data/raw_conversion.txt")

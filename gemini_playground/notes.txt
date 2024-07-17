@@ -1,0 +1,33 @@
+
+####### TODO:
+# 1. remove all task related memory from db since we will have a additional db to save those
+# 2. remove conversion_buffer query from memory, since not important and super lengthy
+
+# 
+# study human behavior
+# how ai task can effect human one
+# how to confirm ai one
+# how to effect them in database point of view
+# event based, time based reminder
+
+# iot_device:
+# set alarm at 5am
+# make me a coffee at 5pm
+
+# human:
+# -> set alarm at 5am
+# discuss with dr.kim about research paper
+# -> make me a coffee at 5pm
+
+# ai:
+# = set alarm at 5am
+# be nice to Jan
+# go out to school
+# grab a coffee on the way
+# = discuss with dr.kim about research paper
+# = make me a coffee at 5pm
+# go to beer party with Ben tonight
+# make a appontment with Shawn tomorrow
+# go to park with family tomorrow
+# go to school with Dan later afternoon
+# #############
