@@ -1,6 +1,8 @@
 import sys
 import psycopg2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget, QPushButton, QGridLayout
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QIcon
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -8,6 +10,9 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("DB Debuger")
         self.setGeometry(100, 100, 800, 600)
+
+        self.setWindowIcon(QIcon("./debuger_icon.png"))
+        # self.setWindowIcon(QIcon("./debuger_icon.icns"))
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -32,6 +37,10 @@ class MainWindow(QMainWindow):
         self.load_data(self.table_widget2, "ai_tasks")
         self.load_data(self.table_widget3, "human_tasks")
         self.load_data(self.table_widget4, "daily_conversion_buffer")
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.refresh_tables)
+        self.timer.start(1000)
 
     def load_data(self, table_widget, table_name):
         conn = psycopg2.connect(

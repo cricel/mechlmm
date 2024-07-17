@@ -206,9 +206,9 @@ class GeminiCore:
             })
 
     def post_ai_tasks_db(self, _name, _task, _date, _location, _status):
-        if _date == "":
+        if (_date == ""):
             _date = None
-        if _task != "":
+        if (_task != "" and _task.lower != "none" ):
             self.db_cur.execute(
                 """
                     INSERT INTO ai_tasks (name, task, date, location, status) VALUES

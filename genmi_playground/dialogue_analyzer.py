@@ -3,6 +3,13 @@ from gemini_core import GeminiCore
 import psycopg2
 import json
 
+
+####### TODO:
+# 1. remove all task related memory from db since we will have a additional db to save those
+# 2. remove conversion_buffer query from memory, since not important and super lengthy
+#############
+
+
 class DialogueAnalyzer:
     def __init__(self):
         self.gemini_core = GeminiCore()
