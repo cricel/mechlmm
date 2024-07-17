@@ -1,6 +1,5 @@
-from dotenv import load_dotenv
+from db_connector import DBConnector
 import sys
-import os
 
 import psycopg2
 
@@ -14,7 +13,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
-        load_dotenv()
+        self.db_connector = DBConnector()
 
         self.setWindowTitle("DB Debuger")
         self.setGeometry(100, 100, 800, 600)
@@ -41,30 +40,18 @@ class MainWindow(QMainWindow):
         self.refresh_button.clicked.connect(self.refresh_tables)
         self.layout.addWidget(self.refresh_button, 2, 0, 1, 2)
 
-        self.load_data(self.table_widget1, "chat_history")
-        self.load_data(self.table_widget2, "ai_tasks")
-        self.load_data(self.table_widget3, "human_tasks")
-        self.load_data(self.table_widget4, "daily_conversion_buffer")
+        self.refresh_tables()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_tables)
         self.timer.start(1000)
 
     def load_data(self, table_widget, table_name):
-        conn = psycopg2.connect(
-            host = "localhost",
-            database = "gemini_db",
-            user = "postgres",
-            password = "qwepoi123",
-            port = 5432
-        )
-        cursor = conn.cursor()
+        self.db_connector.db_cur.execute(f"SELECT * FROM {table_name}")
 
-        cursor.execute(f"SELECT * FROM {table_name}")
+        rows = self.db_connector.db_cur.fetchall()
 
-        rows = cursor.fetchall()
-
-        colnames = [desc[0] for desc in cursor.description]
+        colnames = [desc[0] for desc in self.db_connector.db_cur.description]
 
         table_widget.setRowCount(len(rows))
         table_widget.setColumnCount(len(colnames))
@@ -74,9 +61,6 @@ class MainWindow(QMainWindow):
         for i, row in enumerate(rows):
             for j, col in enumerate(row):
                 table_widget.setItem(i, j, QTableWidgetItem(str(col)))
-
-        cursor.close()
-        conn.close()
 
     def refresh_tables(self):
         self.load_data(self.table_widget1, "chat_history")

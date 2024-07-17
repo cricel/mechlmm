@@ -1,9 +1,5 @@
 
-####### TODO:
-# 1. remove all task related memory from db since we will have a additional db to save those
-# 2. remove conversion_buffer query from memory, since not important and super lengthy
-
-# 
+####### Random Notes
 # study human behavior
 # how ai task can effect human one
 # how to confirm ai one
@@ -31,3 +27,14 @@
 # go to park with family tomorrow
 # go to school with Dan later afternoon
 # #############
+
+
+####### Shawn TODO:
+# 1. remove all task related memory from db since we will have a additional db to save those
+# 2. remove conversion_buffer query from memory, since not important and super lengthy
+
+####### random note 2
+add image to detect task completion
+for example,
+I want to drink a coffee
+a image detect user already bought a coffee -> mark task complete

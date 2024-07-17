@@ -1,33 +1,38 @@
 import google.generativeai as genai
 import PIL.Image
-import psycopg2
 
 import uuid
 
+from db_connector import DBConnector
+from toolbox import ToolBox
+
+from dotenv import load_dotenv
+import os
+
 class GeminiCore:
     def __init__(self):
-        # DB Config
-        self.chat_session_id = str(uuid.uuid4())
-        self.chat_history = []
+        load_dotenv()
 
-        self.init_db()
-        self.get_chat_history_db()
+        self.db_connector = DBConnector()
+        self.tool_box = ToolBox()
+
+        self.chat_session_id = str(uuid.uuid4())
+        self.chat_history = self.db_connector.select_chat_history()
 
         # Gemini Config
-        self.house_fns = [self.tasks_json_convertor, self.power_disco_ball, self.start_music, self.dim_lights]
+        self.house_fns = [self.fc_tasks_json_convertor, self.fc_power_disco_ball, self.fc_start_music, self.fc_dim_lights]
 
         self.function_handler_dict = {
-            "tasks_json_convertor": self.tasks_json_convertor,
-            "power_disco_ball": self.power_disco_ball,
-            "start_music": self.start_music,
-            "dim_lights": self.dim_lights
+            "fc_tasks_json_convertor": self.tool_box.tasks_json_convertor,
+            "fc_power_disco_ball": self.tool_box.power_disco_ball,
+            "fc_start_music": self.tool_box.start_music,
+            "fc_dim_lights": self.tool_box.dim_lights
         }
 
         self.init_llm()
 
     def init_llm(self):
-        GOOGLE_API_KEY="AIzaSyCSjCUGUydxiSsWmlMLEU_nfqtu70HPGZo"
-        genai.configure(api_key=GOOGLE_API_KEY)
+        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
         self.model = genai.GenerativeModel(model_name="gemini-1.5-flash", tools=self.house_fns)
         self.chat = self.model.start_chat(history=self.chat_history)
     
@@ -81,12 +86,9 @@ class GeminiCore:
                     model_result = ""
                 else:
                     model_result = response.text.strip()
-        # if ("text" in part):
-        #     print(response.parts)
-        #     model_result = response.text
 
-        self.post_chat_history_db("user", _msg)
-        self.post_chat_history_db("model", model_result)
+        self.db_connector.insert_chat_history(self.chat_session_id, "user", _msg)
+        self.db_connector.insert_chat_history(self.chat_session_id, "model", model_result)
             
         return model_result
 
@@ -99,129 +101,6 @@ class GeminiCore:
 
         return response.text
     
-
-    #region PostgresDB
-
-    def init_db(self):
-        self.db_conn = psycopg2.connect(
-            host = "localhost",
-            database = "gemini_db",
-            user = "postgres",
-            password = "qwepoi123",
-            port = 5432
-        )
-
-        self.db_cur = self.db_conn.cursor()
-
-
-        ##### TESTING ONLY #####
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS chat_history;
-            """
-        )
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS ai_tasks;
-            """
-        )
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS human_tasks;
-            """
-        )
-
-        self.db_conn.commit()
-        ##### TESTING ONLY #####
-
-
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS chat_history 
-                (
-                    id SERIAL PRIMARY KEY,
-                    session_id UUID,
-                    role VARCHAR(10),
-                    parts TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            """
-        )
-
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS ai_tasks 
-                (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(20),
-                    task TEXT,
-                    date TIMESTAMP,
-                    location VARCHAR(100),
-                    status VARCHAR(10),
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            """
-        )
-
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS human_tasks 
-                (
-                    id SERIAL PRIMARY KEY,
-                    task TEXT,
-                    status VARCHAR(10),
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            """
-        )
-        
-        self.db_conn.commit()
-        # self.db_cur.close()
-        # self.db_conn.close()
-
-    def post_chat_history_db(self, role, parts):
-        self.db_cur.execute(
-            """
-                INSERT INTO chat_history (session_id, role, parts) VALUES
-                (%s, %s, %s)
-            """, 
-            (
-                self.chat_session_id, role, parts
-            )
-        )
-                                
-        self.db_conn.commit()
-
-    def get_chat_history_db(self):
-        self.db_cur.execute(
-            """
-                SELECT * FROM chat_history
-            """
-        )
-        
-        for row in self.db_cur.fetchall():
-            self.chat_history.append({
-                "role": row[2],
-                "parts": [{ "text": row[3] }]
-            })
-
-    def post_ai_tasks_db(self, _name, _task, _date, _location, _status):
-        if (_date == ""):
-            _date = None
-        if (_task != "" and _task.lower != "none" ):
-            self.db_cur.execute(
-                """
-                    INSERT INTO ai_tasks (name, task, date, location, status) VALUES
-                    (%s, %s, %s, %s, %s)
-                """, 
-                (
-                    _name, _task, _date, _location, _status
-                )
-            )
-                                    
-            self.db_conn.commit()
-
-    #endregion
 
     ## LLM FunctionCalls Defination
     #region FunctionCalls
@@ -255,7 +134,7 @@ class GeminiCore:
     #     )
     # )
 
-    def tasks_json_convertor(self, name: str, task: str, date: str, location: str, status: str) -> bool:
+    def fc_tasks_json_convertor(self, name: str, task: str, date: str, location: str, status: str) -> bool:
         """
         Convert given context into actionable task list as JSON format.
 
@@ -271,11 +150,11 @@ class GeminiCore:
             print(f"===I got Task for {name}: {task} at {date} in {location} is {status}")
 
         # task_list = []
-        self.post_ai_tasks_db(name, task, date, location, status)
+        self.db_connector.insert_chat_history(name, task, date, location, status)
 
         return True
     
-    def task_status_checker(self, task: str) -> bool:
+    def fc_task_status_checker(self, task: str) -> bool:
         """
         Convert given context into actionable task list as JSON format.
 
@@ -290,17 +169,17 @@ class GeminiCore:
         """
         
         task_list = []
-        self.post_ai_tasks_db(task_list)
+        self.db_connector.insert_chat_history(task_list)
 
         return True
     
-    def power_disco_ball(self, power: bool) -> bool:
+    def fc_power_disco_ball(self, power: bool) -> bool:
         """Powers the spinning disco ball."""
         print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
         return True
 
 
-    def start_music(self, energetic: bool, loud: bool, bpm: int) -> str:
+    def fc_start_music(self, energetic: bool, loud: bool, bpm: int) -> str:
         """Play some music matching the specified parameters.
 
         Args:
@@ -314,7 +193,7 @@ class GeminiCore:
         return "Never gonna give you up."
 
 
-    def dim_lights(self, brightness: float) -> bool:
+    def fc_dim_lights(self, brightness: float) -> bool:
         """Dim the lights.
 
         Args:
@@ -323,52 +202,6 @@ class GeminiCore:
         print(f"Lights are now set to {brightness:.0%}")
         return True
 
-    #endregion
-
-    ## DONT USE, Will confilct with the other code
-    #region OLD implementation [DONT USE]
-    def process_raw_conversion_txt_to_db(self, _path):
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS daily_conversion;
-            """
-        )
-        self.db_conn.commit()
-
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS daily_conversion 
-                (
-                    id SERIAL PRIMARY KEY,
-                    name VARCHAR(255),
-                    dialogue TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                );
-            """
-        )
-        self.db_conn.commit()
-
-        with open(_path, 'r') as file:
-            dialogue_counter = 0
-
-            for line in file:
-                line = line.strip()
-                if ':' in line and len(line.split(':')) == 2:
-                    dialogue_counter += 1
-
-                    key, value = line.split(':')
-
-                    self.db_cur.execute(
-                        """
-                            INSERT INTO daily_conversion (name, dialogue) VALUES
-                            (%s, %s);
-                        """, 
-                        (
-                            key.strip(), value.strip()
-                        )
-                    )
-                                
-        self.db_conn.commit()
     #endregion
 
 if __name__ == "__main__":
@@ -389,7 +222,3 @@ if __name__ == "__main__":
     print(gemini_core.ask("what is my name").strip())
     print("--------------------------------------------")
     print(gemini_core.ask("what is the current volume of the music").strip())
-
-    ## DONT Use, Will confilct with the other code
-    ## old implementation
-    # gemini_core.process_raw_conversion_txt_to_db("../data/raw_conversion.txt")
