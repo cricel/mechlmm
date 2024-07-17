@@ -77,7 +77,7 @@ class DialogueAnalyzer:
                                 
         self.db_conn.commit()
 
-    def load_conversion_buffer_db(self):
+    def get_conversion_buffer_db(self):
         self.db_cur.execute(
             """
                 SELECT * FROM daily_conversion_buffer
@@ -97,6 +97,17 @@ class DialogueAnalyzer:
         )
         self.db_conn.commit()
 
+    def post_buffer_to_conversion_db(self):
+        self.db_cur.execute(
+            """
+                INSERT INTO daily_conversion (name, dialogue, timestamp)
+                SELECT name, dialogue, timestamp
+                FROM daily_conversion_buffer
+            """
+        )
+        self.db_conn.commit()
+
+
     def testing_flow_conversion_txt(self, _path):
         with open(_path, 'r') as file:
             dialogue_counter = 0
@@ -111,10 +122,10 @@ class DialogueAnalyzer:
                     self.post_conversion_buffer_db(key.strip(), value.strip())
 
                     if(dialogue_counter % 10 == 0):
-                        self.load_conversion_buffer_db()
+                        self.get_conversion_buffer_db()
                         print(self.gemini_core.ask((
                             """
-                                give a list of actionable item for everyone base on the conversion dialogue below, and structure it as when, who, where, what, and status (task status), if no action item found, then simple say "Not Found"
+                                Based on the conversation dialogue below, provide a list of specific, actionable tasks that can be executed, such as 'set an alarm for 5 PM' or 'schedule a meeting with Carl.' Each task should be clearly defined and practical. And ignore those are ambiguous and too general. Trigger a function call for each item in the list. If no task found, then dont trigger function call:
 
                                 %s
                             """, (json.dumps(self.conversion_buffer)))
@@ -123,6 +134,7 @@ class DialogueAnalyzer:
                         print("-=-=-=-=-=-")
 
                         self.conversion_buffer = []
+                        self.post_buffer_to_conversion_db()
                         
 
 

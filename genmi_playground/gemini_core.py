@@ -14,9 +14,10 @@ class GeminiCore:
         self.get_chat_history_db()
 
         # Gemini Config
-        self.house_fns = [self.power_disco_ball, self.start_music, self.dim_lights]
+        self.house_fns = [self.tasks_json_convertor, self.power_disco_ball, self.start_music, self.dim_lights]
 
         self.function_handler_dict = {
+            "tasks_json_convertor": self.tasks_json_convertor,
             "power_disco_ball": self.power_disco_ball,
             "start_music": self.start_music,
             "dim_lights": self.dim_lights
@@ -54,6 +55,7 @@ class GeminiCore:
         for part in response.parts:
             if fn := part.function_call:
                 trigger_function_call = True
+
                 args = ", ".join(f"{key}={val}" for key, val in fn.args.items())
                 function_responses[fn.name] = self.function_handler_dict[fn.name](**fn.args)
                 print(f"{fn.name}({args}) ==> {function_responses[fn.name]}")
@@ -65,13 +67,30 @@ class GeminiCore:
                 for fn, val in function_responses.items()
             ]
 
-            response = self.chat.send_message(response_parts)
+            try:
+                response = self.chat.send_message(response_parts)
+            except Exception as e:
+                print(f"======================Getting Error on {e}")
 
+        model_result = ""
+
+        for part in response.parts:
+            if tx := part.text:
+                if(tx.strip() == ""):
+                    print(response)
+                    model_result = ""
+                else:
+                    model_result = response.text.strip()
+        # if ("text" in part):
+        #     print(response.parts)
+        #     model_result = response.text
 
         self.post_chat_history_db("user", _msg)
-        self.post_chat_history_db("model", response.text)
+        self.post_chat_history_db("model", model_result)
+            
+        return model_result
 
-        return response.text
+        
     
     def ask_img(self, _msg, _img_path):
         img = PIL.Image.open(_img_path)
@@ -134,7 +153,10 @@ class GeminiCore:
                 CREATE TABLE IF NOT EXISTS ai_tasks 
                 (
                     id SERIAL PRIMARY KEY,
+                    name VARCHAR(20),
                     task TEXT,
+                    date TIMESTAMP,
+                    location VARCHAR(100),
                     status VARCHAR(10),
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
@@ -183,10 +205,94 @@ class GeminiCore:
                 "parts": [{ "text": row[3] }]
             })
 
+    def post_ai_tasks_db(self, _name, _task, _date, _location, _status):
+        if _date == "":
+            _date = None
+        if _task != "":
+            self.db_cur.execute(
+                """
+                    INSERT INTO ai_tasks (name, task, date, location, status) VALUES
+                    (%s, %s, %s, %s, %s)
+                """, 
+                (
+                    _name, _task, _date, _location, _status
+                )
+            )
+                                    
+            self.db_conn.commit()
+
     #endregion
 
 
     #region FunctionCalls
+
+    # person = genai.protos.Schema(
+    #     type = genai.protos.Type.OBJECT,
+    #     properties = {
+    #         'name':  genai.protos.Schema(type=genai.protos.Type.STRING),
+    #         'task':  genai.protos.Schema(type=genai.protos.Type.STRING),
+    #         'date':  genai.protos.Schema(type=genai.protos.Type.STRING),
+    #         'location':  genai.protos.Schema(type=genai.protos.Type.STRING),
+    #         'status': genai.protos.Schema(type=genai.protos.Type.STRING),
+    #         'timestamp': genai.protos.Schema(type=genai.protos.Type.STRING)
+    #     },
+    #     required=['name', 'task', 'date', 'location', 'status', 'timestamp']
+    # )
+
+    # add_to_database = genai.protos.FunctionDeclaration(
+    #     name="add_to_database",
+    #     description=textwrap.dedent("""\
+    #         Adds entities to the database.
+    #         """),
+    #     parameters=genai.protos.Schema(
+    #         type=genai.protos.Type.OBJECT,
+    #         properties = {
+    #             'people': people,
+    #             'places': places,
+    #             'things': things,
+    #             'relationships': relationships
+    #         }
+    #     )
+    # )
+
+    def tasks_json_convertor(self, name: str, task: str, date: str, location: str, status: str) -> bool:
+        """
+        Convert given context into actionable task list as JSON format.
+
+        Args:
+        name: the name of the person who is responsble for this task.
+        task: the detail description of the task. if no task found, then return none
+        date: the date and time that this task will take in place, put it in "YYYY-MM-DD HH:MI:SS" format, return empty string if time or date not applied.
+        location: the location that this task will take in place, return empty string if not applied.
+        status: the status of current task, value can be "done, pending, canceled, invalid, none".
+        """
+        
+        if(task != ""):
+            print(f"===I got Task for {name}: {task} at {date} in {location} is {status}")
+
+        # task_list = []
+        self.post_ai_tasks_db(name, task, date, location, status)
+
+        return True
+    
+    def task_status_checker(self, task: str) -> bool:
+        """
+        Convert given context into actionable task list as JSON format.
+
+        Args:
+        name: the name of the person who is responsble for this task.
+        task: the detail description of the task.
+        date: the date and time that this task will take in place, put it in MM/dd/yyyy HH:mm:ss format, return none if time or date not applied.
+        location: the location that this task will take in place, return none if not applied.
+        status: the status of current task, value can be "done, pending, canceled, invalid".
+
+        Returns: json string.
+        """
+        
+        task_list = []
+        self.post_ai_tasks_db(task_list)
+
+        return True
 
     def power_disco_ball(self, power: bool) -> bool:
         """Powers the spinning disco ball."""
