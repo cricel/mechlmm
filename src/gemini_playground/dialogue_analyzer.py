@@ -1,3 +1,8 @@
+##############################################
+# Loading Testing Dialogue into the system for testing
+# Code Entrance Point
+##############################################
+
 from gemini_core import GeminiCore 
 from db_connector import DBConnector
 

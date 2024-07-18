@@ -1,3 +1,7 @@
+##############################################
+# GUI visualizer for debugging the database
+##############################################
+
 from db_connector import DBConnector
 
 import psycopg2

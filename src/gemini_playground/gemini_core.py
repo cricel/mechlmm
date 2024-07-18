@@ -1,3 +1,7 @@
+##############################################
+# All Gemini Core Code is here
+##############################################
+
 import google.generativeai as genai
 import PIL.Image
 

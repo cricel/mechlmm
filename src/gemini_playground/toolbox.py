@@ -1,5 +1,7 @@
+##############################################
+# This file is use for all the actual device functions that will be used
+##############################################
 from db_connector import DBConnector
-
 
 class ToolBox:
     def __init__(self):

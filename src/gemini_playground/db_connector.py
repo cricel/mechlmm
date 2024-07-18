@@ -1,3 +1,8 @@
+##############################################
+# All PostGresSQL Connection Code is here
+# NOTE: This is a Singleton Class
+##############################################
+
 from dotenv import load_dotenv
 import os
 import psycopg2
