@@ -1,13 +1,12 @@
 import google.generativeai as genai
 import PIL.Image
 
-import uuid
-
 from db_connector import DBConnector
 from toolbox import ToolBox
 
 from dotenv import load_dotenv
 import os
+import uuid
 
 class GeminiCore:
     def __init__(self):
@@ -20,20 +19,20 @@ class GeminiCore:
         self.chat_history = self.db_connector.select_chat_history()
 
         # Gemini Config
-        self.house_fns = [self.fc_tasks_json_convertor, self.fc_power_disco_ball, self.fc_start_music, self.fc_dim_lights]
+        self.fns_set = [self.tasks_json_convertor, self.power_disco_ball, self.start_music, self.dim_lights]
 
         self.function_handler_dict = {
-            "fc_tasks_json_convertor": self.tool_box.tasks_json_convertor,
-            "fc_power_disco_ball": self.tool_box.power_disco_ball,
-            "fc_start_music": self.tool_box.start_music,
-            "fc_dim_lights": self.tool_box.dim_lights
+            "tasks_json_convertor": self.tool_box.tasks_json_convertor,
+            "power_disco_ball": self.tool_box.power_disco_ball,
+            "start_music": self.tool_box.start_music,
+            "dim_lights": self.tool_box.dim_lights
         }
 
         self.init_llm()
 
     def init_llm(self):
         genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-        self.model = genai.GenerativeModel(model_name="gemini-1.5-flash", tools=self.house_fns)
+        self.model = genai.GenerativeModel(model_name="gemini-1.5-flash", tools=self.fns_set)
         self.chat = self.model.start_chat(history=self.chat_history)
     
     def ask(self, _msg, _img_path = None):
@@ -134,7 +133,7 @@ class GeminiCore:
     #     )
     # )
 
-    def fc_tasks_json_convertor(self, name: str, task: str, date: str, location: str, status: str) -> bool:
+    def tasks_json_convertor(self, name: str, task: str, date: str, location: str, status: str) -> bool:
         """
         Convert given context into actionable task list as JSON format.
 
@@ -154,7 +153,7 @@ class GeminiCore:
 
         return True
     
-    def fc_task_status_checker(self, task: str) -> bool:
+    def task_status_checker(self, task: str) -> bool:
         """
         Convert given context into actionable task list as JSON format.
 
@@ -173,13 +172,13 @@ class GeminiCore:
 
         return True
     
-    def fc_power_disco_ball(self, power: bool) -> bool:
+    def power_disco_ball(self, power: bool) -> bool:
         """Powers the spinning disco ball."""
         print(f"Disco ball is {'spinning!' if power else 'stopped.'}")
         return True
 
 
-    def fc_start_music(self, energetic: bool, loud: bool, bpm: int) -> str:
+    def start_music(self, energetic: bool, loud: bool, bpm: int) -> str:
         """Play some music matching the specified parameters.
 
         Args:
@@ -193,7 +192,7 @@ class GeminiCore:
         return "Never gonna give you up."
 
 
-    def fc_dim_lights(self, brightness: float) -> bool:
+    def dim_lights(self, brightness: float) -> bool:
         """Dim the lights.
 
         Args:
@@ -207,18 +206,18 @@ class GeminiCore:
 if __name__ == "__main__":
     gemini_core = GeminiCore()
     
-    print(gemini_core.ask("How are you").strip())
-    print("--------------------------------------------")
-    print(gemini_core.ask("what is my name").strip())
-    print("--------------------------------------------")
-    print(gemini_core.ask("How many time have I asked you what is my name").strip())
-    print("--------------------------------------------")
-    print(gemini_core.ask("My name is Shawn").strip())
+    # print(gemini_core.ask("How are you").strip())
+    # print("--------------------------------------------")
+    # print(gemini_core.ask("what is my name").strip())
+    # print("--------------------------------------------")
+    # print(gemini_core.ask("How many time have I asked you what is my name").strip())
+    # print("--------------------------------------------")
+    # print(gemini_core.ask("My name is Shawn").strip())
     print("--------------------------------------------")
     print(gemini_core.ask("Turn off the light").strip())
     print("--------------------------------------------")
-    print(gemini_core.ask("Tell me something about this picture", "./test_img.png").strip())
-    print("--------------------------------------------")
-    print(gemini_core.ask("what is my name").strip())
-    print("--------------------------------------------")
-    print(gemini_core.ask("what is the current volume of the music").strip())
+    # print(gemini_core.ask("Tell me something about this picture", "../../resources/test/images/test_img.png").strip())
+    # print("--------------------------------------------")
+    # print(gemini_core.ask("what is my name").strip())
+    # print("--------------------------------------------")
+    # print(gemini_core.ask("what is the current volume of the music").strip())

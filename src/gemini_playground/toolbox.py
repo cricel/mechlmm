@@ -9,7 +9,7 @@ class ToolBox:
         if(task != ""):
             print(f"===I got Task for {name}: {task} at {date} in {location} is {status}")
 
-        self.db_connector.insert_chat_history(name, task, date, location, status)
+        self.db_connector.insert_ai_tasks(name, task, date, location, status)
     
 
     def task_status_checker(self, task):

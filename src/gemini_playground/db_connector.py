@@ -1,14 +1,12 @@
 from dotenv import load_dotenv
 import os
 import psycopg2
-
-import signal
 import sys
 
-class DBConnector:
+from singleton_meta import SingletonMeta
+    
+class DBConnector(metaclass=SingletonMeta):
     def __init__(self):
-        signal.signal(signal.SIGINT, self.cleanup)
-
         load_dotenv()
 
         self.db_conn = psycopg2.connect(
@@ -21,7 +19,6 @@ class DBConnector:
 
         self.db_cur = self.db_conn.cursor()
 
-        self.debugging_init_table()
         self.init_table()
 
     #region Init
@@ -92,7 +89,7 @@ class DBConnector:
 
         self.db_conn.commit()
 
-    def debugging_init_table(self):
+    def drop_all_tables(self):
         self.db_cur.execute(
             """
                 DROP TABLE IF EXISTS daily_conversion;
@@ -103,7 +100,6 @@ class DBConnector:
                 DROP TABLE IF EXISTS daily_conversion_buffer;
             """
         )
-
         self.db_cur.execute(
             """
                 DROP TABLE IF EXISTS chat_history;
@@ -119,11 +115,39 @@ class DBConnector:
                 DROP TABLE IF EXISTS human_tasks;
             """
         )
-
         self.db_conn.commit()
+        print("clean tables")
     
-    def cleanup(self, signal_received, frame):
-        print("clean up")
+    def delete_all_tables(self):
+        self.db_cur.execute(
+            """
+                DELETE FROM daily_conversion;
+            """
+        )
+        self.db_cur.execute(
+            """
+                DELETE FROM daily_conversion_buffer;
+            """
+        )
+        self.db_cur.execute(
+            """
+                DELETE FROM chat_history;
+            """
+        )
+        self.db_cur.execute(
+            """
+                DELETE FROM ai_tasks;
+            """
+        )
+        self.db_cur.execute(
+            """
+                DELETE FROM human_tasks;
+            """
+        )
+        self.db_conn.commit()
+        print("delete tables")
+
+    def cleanup(self):
         self.db_cur.close()
         self.db_conn.close()
 

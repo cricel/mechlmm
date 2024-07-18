@@ -1,5 +1,4 @@
 from db_connector import DBConnector
-import sys
 
 import psycopg2
 
@@ -7,13 +6,15 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QTableWidget, QTableWidge
 from PyQt5.QtCore import QTimer
 from PyQt5.QtGui import QIcon
 
-
+import sys
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         
         self.db_connector = DBConnector()
+
+        print(self.db_connector)
 
         self.setWindowTitle("DB Debuger")
         self.setGeometry(100, 100, 800, 600)
@@ -36,9 +37,12 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.table_widget3, 1, 0)
         self.layout.addWidget(self.table_widget4, 1, 1)
 
-        self.refresh_button = QPushButton("Refresh")
-        self.refresh_button.clicked.connect(self.refresh_tables)
-        self.layout.addWidget(self.refresh_button, 2, 0, 1, 2)
+        self.refresh_button = QPushButton("DELETE All Tables")
+        self.refresh_button.clicked.connect(self.db_connector.delete_all_tables)
+        self.layout.addWidget(self.refresh_button, 2, 0)
+        self.clean_button = QPushButton("DROP All Tables")
+        self.clean_button.clicked.connect(self.db_connector.drop_all_tables)
+        self.layout.addWidget(self.clean_button, 2, 1)
 
         self.refresh_tables()
 
@@ -47,7 +51,10 @@ class MainWindow(QMainWindow):
         self.timer.start(1000)
 
     def load_data(self, table_widget, table_name):
-        self.db_connector.db_cur.execute(f"SELECT * FROM {table_name}")
+        self.db_connector.db_cur.execute(f"""
+                                            SELECT * FROM {table_name}
+                                         """
+                                         )
 
         rows = self.db_connector.db_cur.fetchall()
 

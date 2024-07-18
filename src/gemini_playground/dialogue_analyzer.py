@@ -1,9 +1,7 @@
 from gemini_core import GeminiCore 
-
-import json
-
 from db_connector import DBConnector
 
+import json
 
 class DialogueAnalyzer:
     def __init__(self):
@@ -38,7 +36,6 @@ class DialogueAnalyzer:
                         print("-------------- ^^ Task Generated ^^ --------------")
 
                         self.db_connector.insert_from_buffer_to_conversion()
-                        
 
 
 if __name__ == "__main__":
