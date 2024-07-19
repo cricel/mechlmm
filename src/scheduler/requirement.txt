@@ -1,0 +1,6 @@
+schedule
+python-dotenv
+psycopg2
+psycopg2-binary
+google-generativeai
+pyqt5
