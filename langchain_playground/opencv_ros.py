@@ -6,7 +6,7 @@ import cv2
 
 import base64
 
-from ollama_image import OllamaCore
+from langchain_playground.ollama_core import OllamaCore
 
 import concurrent.futures
 

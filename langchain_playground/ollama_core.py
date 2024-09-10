@@ -13,12 +13,23 @@ class OllamaCore:
     def chat_text(self):
         pass
 
-    def chat_img(self, base_img):
+    def chat_img(self, _base_img):
         summary_prompt_text = """What's in this image?"""
+        feature_prompt_text = """
+        What objects are in the image, and give me the bounding box coordinate position of each object, and unique features of each object, and return it in json format.
+        and use this format {objects: {object_name: {position: [top_left_x, top_left_y, bottom_right_x, bottom_right_y]}, features: [features_1, feature_2]}
+        only return the json itself, no any other additional content
+        """
 
-        summary_result = self.image_summarize(base_img, summary_prompt_text)
+        target_prompt = feature_prompt_text
+        summary_result = self.image_summarize(_base_img, target_prompt)
 
-        print(summary_result)
+        cleaned_summary_result = summary_result.replace("```json", "")
+        cleaned_summary_result = cleaned_summary_result.replace("```", "")
+
+        print(cleaned_summary_result)
+
+        return cleaned_summary_result
 
     def encode_image(self, image_path):
         """Getting the base64 string"""
@@ -28,7 +39,7 @@ class OllamaCore:
 
     def image_summarize(self, img_base64, prompt):
         """Make image summary"""
-        chat = ChatOllama(model=self.model)
+        chat = ChatOllama(base_url="http://192.168.1.182:11434", model=self.model)
 
         image_url = f"data:image/jpeg;base64,{img_base64}"
 
