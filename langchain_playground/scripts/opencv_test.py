@@ -7,6 +7,8 @@ from ollama_core import OllamaCore
 
 import concurrent.futures
 
+from datetime import datetime
+
 ## TODO
 # Base on if current object is in the frame or not, set it to active, 
 # and check if current time is within 2 sec of last time it was active
@@ -16,15 +18,18 @@ import concurrent.futures
 
 ollama_core = OllamaCore()
 
-cam = cv2.VideoCapture(1)
+cam = cv2.VideoCapture(0)
 
 frame_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 # Define the codec and create VideoWriter object
+current_datetime = datetime.now()
+datetime_string = current_datetime.strftime('%Y-%m-%d_%H:%M:%S')
+
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 fps = 20.0
-out = cv2.VideoWriter('output.mp4', fourcc, fps, (frame_width, frame_height))
+out = cv2.VideoWriter('../output/videos/' + datetime_string + '.mp4', fourcc, fps, (frame_width, frame_height))
 
 start_time = time.time()
 
@@ -32,7 +37,7 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 last_future = None
 
-detected_objects_list = []
+detected_objects_dict = {}
 
 while True:
     ret, frame = cam.read()
@@ -47,13 +52,17 @@ while True:
         if(last_future is not None and last_future.done()):
             try:
                 json_object = json.loads(last_future.result())
-                object_names = list(json_object["objects"].keys())
+                # object_names = list(json_object["objects"].keys())
+                
+                for key, value in json_object.items():
+                    if key in detected_objects_dict:
+                        if not isinstance(detected_objects_dict[key], list):
+                            detected_objects_dict[key] = [detected_objects_dict[key]]
+                        detected_objects_dict[key].append(value)
+                    else:
+                        detected_objects_dict[key] = value
 
-                for item in object_names:
-                    if item not in detected_objects_list:
-                        detected_objects_list.append(item)
-
-                print(detected_objects_list)
+                print(detected_objects_dict)
             except:
                 print("Something wrong with the llm generated json, ignore current detection")
 
