@@ -13,10 +13,21 @@ def jpg_to_base64(image_path):
             return base64.b64encode(image_file.read()).decode("utf-8")
         
 def llm_output_json_cleaner(json_text):
-    cleaned_json_text = json_text.replace("```json", "")
-    cleaned_json_text = cleaned_json_text.replace("```", "")
+    # cleaned_json_text = json_text.replace("```json", "")
+    # cleaned_json_text = cleaned_json_text.replace("```", "")
+    # return cleaned_json_text
 
-    return cleaned_json_text
+    start = json_text.find("{")
+    end = json_text.rfind("}")
+    if start != -1 and end != -1 and start < end:
+        return json_text[start:end+1]
+    return ""
 
 def llm_output_list_cleaner(string_list):
-     return ast.literal_eval(string_list)
+    clean_string = ""
+    start = string_list.find("[")
+    end = string_list.find("]")
+    if start != -1 and end != -1 and start < end:
+        clean_string = string_list[start:end+1]
+
+    return ast.literal_eval(clean_string)

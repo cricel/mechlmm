@@ -30,39 +30,26 @@ class PostgresCore:
                     id SERIAL PRIMARY KEY,
                     name VARCHAR(255) UNIQUE,
                     features TEXT[],
-                    reference_videos TEXT[][]
+                    reference_videos TEXT[][],
+                    summary TEXT
                 );
             """
         )
 
         self.db_conn.commit()
 
-    def post_objects_map_db(self, name, features, reference_videos):
+    def post_objects_map_db(self, _name, _features, _reference_videos, _summary):
         insert_query = """
-            INSERT INTO objects_map (name, features, reference_videos) 
-            VALUES (%s, %s, %s)
+            INSERT INTO objects_map (name, features, reference_videos, summary) 
+            VALUES (%s, %s, %s, %s)
             ON CONFLICT (name) 
             DO UPDATE SET 
                 features = EXCLUDED.features,
                 reference_videos = EXCLUDED.reference_videos
         """
 
-        self.db_cur.execute(insert_query, (name, features, reference_videos))
+        self.db_cur.execute(insert_query, (_name, _features, _reference_videos, _summary))
         self.db_conn.commit()
-
-    def get_objects_map_features_db(self, name):
-        select_query = """
-            SELECT features 
-            FROM objects_map 
-            WHERE name = %s
-        """
-        self.db_cur.execute(select_query, (name,))
-        result = self.db_cur.fetchone()
-
-        if result:
-            return result[0]
-        else:
-            return None
         
     def get_objects_map_record_by_name_db(self, name):
         select_query = """

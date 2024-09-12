@@ -4,6 +4,7 @@ import cv2
 from langchain_core.messages import HumanMessage
 from langchain_community.chat_models import ChatOllama
 
+from debug_core import DebugCore
 import utilities_core
 
 class OllamaCore:
@@ -11,12 +12,14 @@ class OllamaCore:
         self.img_model = "llava"
         self.txt_model = "llama3.1"
         self.ollama_server_ip = "http://192.168.1.182:11434"
+        self.debug_core = DebugCore()
+        self.debug_core.verbose = 3
 
     def chat(self):
         pass
 
     def chat_text(self, _prompt):
-        chat = ChatOllama(base_url=self.ollama_server_ip, model=self.txt_model)
+        chat = ChatOllama(base_url=self.ollama_server_ip, model=self.img_model)
 
         msg = chat.invoke(
             [
@@ -27,11 +30,36 @@ class OllamaCore:
         return msg.content
 
     def chat_img(self, _base_img):
-        summary_prompt_text = """What's in this image?"""
-        feature_prompt_text = f"""
-        What objects are in the image, and give me the bounding box coordinate position of each object, and unique features of each object, and return it in json format.
-        and use this format {{objects: {{object_name: {{position: [top_left_x, top_left_y, bottom_right_x, bottom_right_y], features: [features_1, feature_2]}}}}}}
-        only return the json itself, no any other additional content
+        # summary_prompt_text = """What's in this image?"""
+        # feature_prompt_text = f"""
+        # What objects are in the image, and give me the bounding box coordinate position of each object, and unique features of each object, and return it in json format.
+        # and use this format {{objects: {{object_name: {{position: [top_left_x, top_left_y, bottom_right_x, bottom_right_y], features: [features_1, feature_2]}}}}}}
+        # only return the json itself, no any other additional content
+        # """
+
+        feature_prompt_text = """
+            "Analyze the following image and identify all objects present in the image. For each object, provide the following information:
+
+            The bounding box position, specifying the coordinates for the top-left corner (top_left_x, top_left_y) and the bottom-right corner (bottom_right_x, bottom_right_y).
+            A list of key features that were used to identify this object (e.g., color, texture, shape, etc.).
+
+            Please return the output strictly in the following JSON format:
+
+            {
+                "objects": {
+                    "object_name_1": {
+                        "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
+                        "features": ["features_1", "features_2", "feature_3"],
+                    },
+                    "object_name_2": {
+                        "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
+                        "features": ["features_1", "features_2", "feature_3"],
+                    }
+                    // Add more objects as necessary
+                }
+            }
+
+            Make sure to fill in all required information for each object detected in the image."
         """
 
         target_prompt = feature_prompt_text
@@ -39,7 +67,8 @@ class OllamaCore:
 
         cleaned_summary_result = utilities_core.llm_output_json_cleaner(summary_result)
 
-        print(cleaned_summary_result)
+        self.debug_core.log_info("------ llm image analyzer output ------")
+        self.debug_core.log_info(cleaned_summary_result)
 
         return cleaned_summary_result
 
@@ -91,30 +120,30 @@ class OllamaCore:
 
                 cv2.imshow('Video Frame', frame)
 
-                _summary = self.image_summarize(utilities_core.opencv_frame_to_base64(frame), summary_prompt_text)
+                frame_summary = self.image_summarize(utilities_core.opencv_frame_to_base64(frame), summary_prompt_text)
+
+                self.debug_core.log_info("------ llm video single frame analyzer output ------")
+                self.debug_core.log_info(frame_summary)
                 
-                print("--- Video Frame Summary ---")
-                print(_summary)
-                
-                conversion_list.append(_summary)
+                conversion_list.append(frame_summary)
             
             current_frame += 1
         
         cap.release()
 
-        print("========== Complete Video Summary ==========")
-        summary = self.chat_text("The following content is coming from a series of live view, can you summary them into a storyline of what happen in a short paragraph : \n\n" + '\n'.join(conversion_list))
-        print(summary)
+        video_summary = self.chat_text("The following content is coming from a series of live view, can you summary them into a storyline of what happen in a short paragraph : \n\n" + '\n'.join(conversion_list))
+        self.debug_core.log_info("------ llm video analyzer output ------")
+        self.debug_core.log_info(video_summary)
 
-        return summary
+        return video_summary
 
     
 if __name__ == '__main__':
     ollama_core = OllamaCore()
 
-    # print(ollama_core.chat_text("how are you"))
+    # print(ollama_core.chat_text("I want to write a promot"))
 
-    # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
-    # ollama_core.chat_img(base64_image)
+    base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
+    ollama_core.chat_img(base64_image)
 
-    ollama_core.video_summary("../data/videos/fast_and_furious.mp4", 0, 30, 10)
+    # ollama_core.video_summary("../data/videos/fast_and_furious.mp4", 0, 30, 10)

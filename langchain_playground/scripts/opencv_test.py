@@ -25,10 +25,11 @@ frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 current_datetime = datetime.now()
 video_file_name = current_datetime.strftime('%Y-%m-%d_%H-%M-%S')
+video_file_path = '../output/videos/' + video_file_name + '.mp4'
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 fps = 20.0
-out = cv2.VideoWriter('../output/videos/' + video_file_name + '.mp4', fourcc, fps, (frame_width, frame_height))
+out = cv2.VideoWriter(video_file_path, fourcc, fps, (frame_width, frame_height))
 
 start_time = time.time()
 
@@ -71,9 +72,9 @@ while True:
                             print(current_features)
                             print("=========")
                             features_future = executor.submit(ollama_core.chat_text, f"""
-                                                        in the 2 provided list below, merge the item with similar meaning if any, then combine the rest into single list, and format like [feature1, feature2, feature3]
-                                                        only return the json itself, no any other additional content.
-
+                                                        Merge the items with similar meanings from the two provided lists below, then combine the rest into a single list. 
+                                                        Format the final output as one single list as [feature1, feature2, feature3]. 
+                                                        Only return the JSON array of features, no need for the reasoning or any additional content.
 
                                                         {key_record["features"]}
                                                         {current_features}
@@ -104,6 +105,7 @@ while True:
                                 else:
                                     ## TODO
                                     # Add video summary for previous one when jump
+                                    # video_summary = ollama_core.video_summary(video_file_path, int(current_reference_videos[-1][1]), int(current_reference_videos[-1][2]))
                                     print("3=====")
                                     current_reference_videos.append([video_file_name, str(elapsed_time), str(elapsed_time)])
                                     print(key)
