@@ -4,6 +4,7 @@ import json
 import base64
 
 from ollama_core import OllamaCore
+from postgres_core import PostgresCore
 
 import concurrent.futures
 
@@ -17,13 +18,13 @@ from datetime import datetime
 # then keep increase the ending time of the new added array
 
 ollama_core = OllamaCore()
+postgres_core = PostgresCore()
 
-cam = cv2.VideoCapture(0)
+cam = cv2.VideoCapture(1)
 
 frame_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-# Define the codec and create VideoWriter object
 current_datetime = datetime.now()
 datetime_string = current_datetime.strftime('%Y-%m-%d_%H:%M:%S')
 
@@ -61,18 +62,20 @@ while True:
                         detected_objects_dict[key].append(value)
                     else:
                         detected_objects_dict[key] = value
-
+                        print("-=-=-=-=-= value")
+                        print(value)
+                        print("-=-=-=-=-= value")
+                
                 print(detected_objects_dict)
             except:
                 print("Something wrong with the llm generated json, ignore current detection")
 
         elapsed_time = time.time() - start_time
-        timestamp = elapsed_time * 1000  # convert to milliseconds
+        timestamp = elapsed_time * 1000
         print(f"Current frame timestamp: {timestamp:.2f} ms")
         
         last_future = executor.submit(ollama_core.chat_img, frame_base64)
     
-    # Write the frame to the output file
     out.write(frame)
 
     cv2.imshow('Camera', frame)
