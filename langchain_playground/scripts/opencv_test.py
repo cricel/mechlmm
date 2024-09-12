@@ -10,12 +10,10 @@ import concurrent.futures
 
 from datetime import datetime
 
+import utilities_core
+
 ## TODO
-# Base on if current object is in the frame or not, set it to active, 
-# and check if current time is within 2 sec of last time it was active
-# if it is, keep updating the last time ending time variable
-# if not, append a new 2 size array to indicate the new clip session, and record current time as start time
-# then keep increase the ending time of the new added array
+# Search related info and video sequence when ask
 
 ollama_core = OllamaCore()
 postgres_core = PostgresCore()
@@ -26,11 +24,11 @@ frame_width = int(cam.get(cv2.CAP_PROP_FRAME_WIDTH))
 frame_height = int(cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
 current_datetime = datetime.now()
-datetime_string = current_datetime.strftime('%Y-%m-%d_%H:%M:%S')
+video_file_name = current_datetime.strftime('%Y-%m-%d_%H-%M-%S')
 
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
 fps = 20.0
-out = cv2.VideoWriter('../output/videos/' + datetime_string + '.mp4', fourcc, fps, (frame_width, frame_height))
+out = cv2.VideoWriter('../output/videos/' + video_file_name + '.mp4', fourcc, fps, (frame_width, frame_height))
 
 start_time = time.time()
 
@@ -39,6 +37,7 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 last_future = None
 
 detected_objects_dict = {}
+
 
 while True:
     ret, frame = cam.read()
@@ -50,29 +49,78 @@ while True:
     frame_base64 = base64.b64encode(buffer).decode('utf-8')
 
     if last_future is None or last_future.done():
-        if(last_future is not None and last_future.done()):
+        if(last_future is not None):
             try:
                 json_object = json.loads(last_future.result())
-                # object_names = list(json_object["objects"].keys())
                 
-                for key, value in json_object.items():
-                    if key in detected_objects_dict:
-                        if not isinstance(detected_objects_dict[key], list):
-                            detected_objects_dict[key] = [detected_objects_dict[key]]
-                        detected_objects_dict[key].append(value)
-                    else:
-                        detected_objects_dict[key] = value
-                        print("-=-=-=-=-= value")
-                        print(value)
-                        print("-=-=-=-=-= value")
-                
-                print(detected_objects_dict)
-            except:
-                print("Something wrong with the llm generated json, ignore current detection")
+                if(json_object["objects"]):
+                    for key, value in json_object["objects"].items():
+                        current_features = value["features"]
+                        current_reference_videos = []
+                        key_record = postgres_core.get_objects_map_record_by_name_db(key)
+                        
+                        print("-=-=-=-=-=-=-")
+                        print(key_record)
+                        # if(key_record != None):
+                        #     print("-=-=-reference_videos-=-=-=-")
+                        #     print(key_record["reference_videos"])
 
-        elapsed_time = time.time() - start_time
-        timestamp = elapsed_time * 1000
-        print(f"Current frame timestamp: {timestamp:.2f} ms")
+                        if(key_record != None and key_record["features"] != None):
+                            print("-----")
+                            print(key_record["features"])
+                            print(current_features)
+                            print("=========")
+                            features_future = executor.submit(ollama_core.chat_text, f"""
+                                                        in the 2 provided list below, merge the item with similar meaning if any, then combine the rest into single list, and format like [feature1, feature2, feature3]
+                                                        only return the json itself, no any other additional content.
+
+
+                                                        {key_record["features"]}
+                                                        {current_features}
+                                                        """)
+                            
+                            new_features = features_future.result()
+                            print(new_features)
+                            print("))---((")
+                            current_features = utilities_core.llm_output_list_cleaner(new_features)
+                            print(current_features)
+
+                        if(key_record != None and key_record["reference_videos"] != None):
+                            current_reference_videos = key_record["reference_videos"]
+                            print("-=-=-reference_videos-=-=-=-")
+                            print(current_reference_videos)
+
+                            if(current_reference_videos == []):
+                                print("1=====")
+                                current_reference_videos.append([video_file_name, str(elapsed_time), str(elapsed_time)])
+                                print(key)
+                                print(current_reference_videos)
+                            else:
+                                if(elapsed_time - int(current_reference_videos[-1][1]) < 30):
+                                    print("2=====")
+                                    current_reference_videos[-1][2] = str(elapsed_time)
+                                    print(key)
+                                    print(current_reference_videos)
+                                else:
+                                    ## TODO
+                                    # Add video summary for previous one when jump
+                                    print("3=====")
+                                    current_reference_videos.append([video_file_name, str(elapsed_time), str(elapsed_time)])
+                                    print(key)
+                                    print(current_reference_videos)
+                        else:
+                            print("4=====")
+                            current_reference_videos.append([video_file_name, str(elapsed_time), str(elapsed_time)])
+                            print(key)
+                            print(current_reference_videos)
+                            
+                        postgres_core.post_objects_map_db(key, current_features, current_reference_videos)
+
+            except Exception as e:
+                print(e)
+        
+        elapsed_time = int(time.time() - start_time)
+        print(f"Current frame timestamp: {elapsed_time} s")
         
         last_future = executor.submit(ollama_core.chat_img, frame_base64)
     

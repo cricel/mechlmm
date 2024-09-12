@@ -28,17 +28,16 @@ class OllamaCore:
 
     def chat_img(self, _base_img):
         summary_prompt_text = """What's in this image?"""
-        feature_prompt_text = """
+        feature_prompt_text = f"""
         What objects are in the image, and give me the bounding box coordinate position of each object, and unique features of each object, and return it in json format.
-        and use this format {objects: {object_name: {position: [top_left_x, top_left_y, bottom_right_x, bottom_right_y]}, features: [features_1, feature_2]}
+        and use this format {{objects: {{object_name: {{position: [top_left_x, top_left_y, bottom_right_x, bottom_right_y], features: [features_1, feature_2]}}}}}}
         only return the json itself, no any other additional content
         """
 
         target_prompt = feature_prompt_text
         summary_result = self.image_summarize(_base_img, target_prompt)
 
-        cleaned_summary_result = summary_result.replace("```json", "")
-        cleaned_summary_result = cleaned_summary_result.replace("```", "")
+        cleaned_summary_result = utilities_core.llm_output_json_cleaner(summary_result)
 
         print(cleaned_summary_result)
 
@@ -113,7 +112,7 @@ class OllamaCore:
 if __name__ == '__main__':
     ollama_core = OllamaCore()
 
-    # ollama_core.chat_text("how are you")
+    # print(ollama_core.chat_text("how are you"))
 
     # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
     # ollama_core.chat_img(base64_image)
