@@ -2,6 +2,16 @@ import cv2
 import base64
 import ast
 
+import os
+from datetime import datetime, timedelta
+from debug_core import DebugCore
+
+debug_core = DebugCore()
+debug_core.verbose = 3
+
+VIDEOS_OUTPUT_PATH = "../output/videos"
+IMAGES_OUTPUT_PATH = "../output/images"
+
 def opencv_frame_to_base64(_frame):
     _, buffer = cv2.imencode('.jpg', _frame)
     frame_base64 = base64.b64encode(buffer).decode('utf-8')
@@ -31,3 +41,60 @@ def llm_output_list_cleaner(string_list):
         clean_string = string_list[start:end+1]
 
     return ast.literal_eval(clean_string)
+
+def query_video_frame(requested_time):
+    video_files = sorted([f for f in os.listdir(VIDEOS_OUTPUT_PATH) if f.startswith('output_video_') and f.endswith('.mp4')])
+    
+    timestamps = []
+    for filename in video_files:
+        try:
+            timestamp_str = filename.replace('output_video_', '').replace('.mp4', '')
+            timestamp = datetime.strptime(timestamp_str, '%Y%m%d_%H%M%S')
+            timestamps.append((timestamp, filename))
+        except ValueError:
+            debug_core.log_error(f"Error parsing timestamp from filename: {filename}")
+            continue
+
+    timestamps.sort(key=lambda x: x[0])
+    
+    for i in range(len(timestamps)):
+        video_start_time = timestamps[i][0]
+        
+        video_relative_time = requested_time - (video_start_time - timestamps[0][0]).total_seconds()
+        if 0 <= video_relative_time < 10:
+            video_filename = timestamps[i][1]
+            frame_time_in_video = video_relative_time
+            break
+    else:
+        debug_core.log_error(f"No video file found for the requested time: {requested_time} seconds")
+        return None
+    
+    cap = cv2.VideoCapture(os.path.join(VIDEOS_OUTPUT_PATH, video_filename))
+    
+    if not cap.isOpened():
+        debug_core.log_error(f"Error: Could not open video file {video_filename}")
+        return None
+    
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frame_number = int(fps * frame_time_in_video)
+    
+    cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
+    
+    ret, frame = cap.read()
+    
+    if not ret:
+        debug_core.log_error(f"Error: Could not read frame at {requested_time} seconds from video {video_filename}")
+        cap.release()
+        return None
+
+    cap.release()
+    
+    return frame
+
+
+def frame_to_jpg(frame, filename):
+    cv2.imwrite(os.path.join(IMAGES_OUTPUT_PATH, filename), frame)
+    debug_core.log_info(f"Frame saved as {os.path.join(IMAGES_OUTPUT_PATH, filename)}")
+
+if __name__ == '__main__':
+    frame_to_jpg(query_video_frame(7), "test.jpg")

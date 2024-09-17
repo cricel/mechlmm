@@ -42,6 +42,7 @@ class OllamaCore:
 
             The bounding box position, specifying the coordinates for the top-left corner (top_left_x, top_left_y) and the bottom-right corner (bottom_right_x, bottom_right_y).
             A list of key features that were used to identify this object (e.g., color, texture, shape, etc.).
+            The context of what this object is doing in the whole environment
 
             Please return the output strictly in the following JSON format:
 
@@ -50,10 +51,12 @@ class OllamaCore:
                     "object_name_1": {
                         "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
                         "features": ["features_1", "features_2", "feature_3"],
+                        "context": "xxx"
                     },
                     "object_name_2": {
                         "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
                         "features": ["features_1", "features_2", "feature_3"],
+                        "context": "xxx"
                     }
                     // Add more objects as necessary
                 }
@@ -90,7 +93,32 @@ class OllamaCore:
 
         return msg.content
     
-    def video_summary(self, video_path, start_time, end_time, interval_time = 5):
+
+    def video_summary_video_feed_storage(self, start_time, end_time, interval_time = 5):
+        summary_prompt_text = """This is a live view, describe what you see in the scene"""
+        conversion_list = []
+
+        time_passed = end_time - start_time
+
+        _frame_time_list = [i for i in range(0, time_passed, interval_time)] + [time_passed]
+        
+        for _frame_time in _frame_time_list:
+            _frame = utilities_core.query_video_frame(_frame_time)
+
+            frame_summary = self.image_summarize(utilities_core.opencv_frame_to_base64(_frame), summary_prompt_text)
+
+            self.debug_core.log_info("------ llm video single frame analyzer output ------")
+            self.debug_core.log_info(frame_summary)
+            
+            conversion_list.append(frame_summary)
+
+        video_summary = self.chat_text("The following content is coming from a series of live view, can you summary them into a storyline of what happen in a short paragraph : \n\n" + '\n'.join(conversion_list))
+        self.debug_core.log_info("------ llm video analyzer output ------")
+        self.debug_core.log_info(video_summary)
+
+        return video_summary
+
+    def video_summary_old(self, video_path, start_time, end_time, interval_time = 5):
         summary_prompt_text = """This is a live view, describe what you see in the scene"""
         conversion_list = []
 
@@ -143,7 +171,8 @@ if __name__ == '__main__':
 
     # print(ollama_core.chat_text("I want to write a promot"))
 
-    base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
-    ollama_core.chat_img(base64_image)
+    # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
+    # ollama_core.chat_img(base64_image)
 
     # ollama_core.video_summary("../data/videos/fast_and_furious.mp4", 0, 30, 10)
+    ollama_core.video_summary_video_feed_storage(7,15)

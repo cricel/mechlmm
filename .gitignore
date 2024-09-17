@@ -164,3 +164,4 @@ cython_debug/
 cam.jpg
 
 *.mp4
+langchain_playground/output/*

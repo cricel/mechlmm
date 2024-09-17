@@ -22,6 +22,12 @@ class PostgresCore:
             """
         )
 
+        self.db_cur.execute(
+            """
+                DROP TABLE IF EXISTS video_summaries;
+            """
+        )
+
         self.db_conn.commit()
 
         self.db_cur.execute(
@@ -33,6 +39,18 @@ class PostgresCore:
                     reference_videos TEXT[][],
                     summary TEXT
                 );
+            """
+        )
+
+        self.db_cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS video_summaries (
+                id SERIAL PRIMARY KEY,
+                file_name VARCHAR(255) NOT NULL,
+                start_time TIMESTAMP NOT NULL,
+                end_time TIMESTAMP NOT NULL,
+                summary TEXT
+            );
             """
         )
 
@@ -50,7 +68,7 @@ class PostgresCore:
 
         self.db_cur.execute(insert_query, (_name, _features, _reference_videos, _summary))
         self.db_conn.commit()
-        
+    
     def get_objects_map_record_by_name_db(self, name):
         select_query = """
             SELECT * 
@@ -65,6 +83,16 @@ class PostgresCore:
             return dict(zip(col_names, result))
         else:
             return None
+
+    def post_video_summaries_db(self, _file_name, _start_time, _end_time, _summary):
+        insert_query = """
+            INSERT INTO video_summaries (file_name, start_time, end_time, summary)
+            VALUES (%s, %s, %s, %s);
+            """
+        
+        self.db_cur.execute(insert_query, (_file_name, _start_time, _end_time, _summary))
+
+        self.db_conn.commit()
 
 if __name__ == "__main__":
     postgres_core = PostgresCore()
