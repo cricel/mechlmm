@@ -5,6 +5,7 @@ from langchain_core.messages import HumanMessage
 from langchain_community.chat_models import ChatOllama
 
 from debug_core import DebugCore
+from postgres_core import PostgresCore
 import utilities_core
 
 class OllamaCore:
@@ -14,6 +15,8 @@ class OllamaCore:
         self.ollama_server_ip = "http://192.168.1.182:11434"
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
+
+        self.postgres_core = PostgresCore(False)
 
     def chat(self):
         pass
@@ -28,6 +31,16 @@ class OllamaCore:
         )
 
         return msg.content
+    
+    def chat_text_knowledge(self, _msg):
+        summary_list = []
+
+        db_knowledge_list = self.postgres_core.get_objects_map_name_list_db()
+        detected_db_knowledge_list = [item for item in db_knowledge_list if item in _msg]
+        for kl in detected_db_knowledge_list:
+            video_detail = self.postgres_core.get_objects_map_record_by_name_db(kl)
+            for video_content in video_detail["reference_videos"]:
+                ds
 
     def chat_img(self, _base_img):
         # summary_prompt_text = """What's in this image?"""
@@ -118,7 +131,7 @@ class OllamaCore:
 
         return video_summary
 
-    def video_summary_old(self, video_path, start_time, end_time, interval_time = 5):
+    def video_summary_file(self, video_path, start_time = 0, end_time = 0, interval_time = 5):
         summary_prompt_text = """This is a live view, describe what you see in the scene"""
         conversion_list = []
 
@@ -127,7 +140,13 @@ class OllamaCore:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         
         start_frame = int(start_time * fps)
-        end_frame = int(end_time * fps)
+        end_frame = 0
+
+        if(end_frame == 0):
+            end_frame = total_frames
+        else:
+            end_frame = int(end_time * fps)
+        
         
         end_frame = min(end_frame, total_frames - 1)
         
@@ -146,11 +165,11 @@ class OllamaCore:
                 (current_frame == end_frame)
             ):
 
-                cv2.imshow('Video Frame', frame)
-
+                # cv2.imshow('Video Frame', frame)
                 frame_summary = self.image_summarize(utilities_core.opencv_frame_to_base64(frame), summary_prompt_text)
 
                 self.debug_core.log_info("------ llm video single frame analyzer output ------")
+                self.debug_core.log_info(int(current_frame/fps))
                 self.debug_core.log_info(frame_summary)
                 
                 conversion_list.append(frame_summary)
@@ -165,7 +184,6 @@ class OllamaCore:
 
         return video_summary
 
-    
 if __name__ == '__main__':
     ollama_core = OllamaCore()
 

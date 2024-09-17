@@ -74,8 +74,7 @@ class VisionCore:
         if current_time - self.start_time >= self.saved_video_duration or self.reference_video is None:
             if self.reference_video is not None:
                 self.reference_video.release()
-
-            self.video_summary_analyzer(self.video_filename, self.start_time, current_time)
+                self.video_summary_analyzer(self.video_filename, self.start_time, current_time)
             
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             self.video_filename = f'output_video_{timestamp}.mp4'
@@ -189,7 +188,12 @@ class VisionCore:
         return _db_reference_videos, video_summary
     
     def video_summary_analyzer(self, _filename,_start_time, _end_time):
-        pass
+        
+        summary = self.ollama_core.video_summary_file(os.path.join(utilities_core.VIDEOS_OUTPUT_PATH, _filename))
+        self.postgres_core.post_video_summaries_db(_filename, 
+                                                   utilities_core.time_to_string(_start_time), 
+                                                   utilities_core.time_to_string(_end_time), 
+                                                   summary)
     
 if __name__ == '__main__':
     vision_core = VisionCore()

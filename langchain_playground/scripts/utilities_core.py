@@ -96,5 +96,11 @@ def frame_to_jpg(frame, filename):
     cv2.imwrite(os.path.join(IMAGES_OUTPUT_PATH, filename), frame)
     debug_core.log_info(f"Frame saved as {os.path.join(IMAGES_OUTPUT_PATH, filename)}")
 
+def time_to_string(_time):
+    dt_object = datetime.fromtimestamp(_time)
+    timestamp = dt_object.strftime('%Y%m%d_%H%M%S')
+
+    return timestamp
+
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")

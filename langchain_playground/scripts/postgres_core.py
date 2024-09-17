@@ -2,10 +2,10 @@ import psycopg2
 import json
 
 class PostgresCore:
-    def __init__(self):
-        self.init_db()
+    def __init__(self, reset = True):
+        self.init_db(reset)
 
-    def init_db(self):
+    def init_db(self, _reset):
         self.db_conn = psycopg2.connect(
             host = "localhost",
             database = "mechllm",
@@ -16,45 +16,46 @@ class PostgresCore:
 
         self.db_cur = self.db_conn.cursor()
 
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS objects_map;
-            """
-        )
+        if(_reset):
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS objects_map;
+                """
+            )
 
-        self.db_cur.execute(
-            """
-                DROP TABLE IF EXISTS video_summaries;
-            """
-        )
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS video_summaries;
+                """
+            )
 
-        self.db_conn.commit()
+            self.db_conn.commit()
 
-        self.db_cur.execute(
-            """
-                CREATE TABLE IF NOT EXISTS objects_map (
+            self.db_cur.execute(
+                """
+                    CREATE TABLE IF NOT EXISTS objects_map (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(255) UNIQUE,
+                        features TEXT[],
+                        reference_videos TEXT[][],
+                        summary TEXT
+                    );
+                """
+            )
+
+            self.db_cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS video_summaries (
                     id SERIAL PRIMARY KEY,
-                    name VARCHAR(255) UNIQUE,
-                    features TEXT[],
-                    reference_videos TEXT[][],
+                    file_name VARCHAR(255) NOT NULL,
+                    start_time TIMESTAMP NOT NULL,
+                    end_time TIMESTAMP NOT NULL,
                     summary TEXT
                 );
-            """
-        )
+                """
+            )
 
-        self.db_cur.execute(
-            """
-            CREATE TABLE IF NOT EXISTS video_summaries (
-                id SERIAL PRIMARY KEY,
-                file_name VARCHAR(255) NOT NULL,
-                start_time TIMESTAMP NOT NULL,
-                end_time TIMESTAMP NOT NULL,
-                summary TEXT
-            );
-            """
-        )
-
-        self.db_conn.commit()
+            self.db_conn.commit()
 
     def post_objects_map_db(self, _name, _features, _reference_videos, _summary):
         insert_query = """
@@ -83,6 +84,17 @@ class PostgresCore:
             return dict(zip(col_names, result))
         else:
             return None
+        
+    def get_objects_map_name_list_db(self):
+        select_query = """
+            SELECT name
+            FROM objects_map
+        """
+        self.db_cur.execute(select_query)
+
+        names = [row[0] for row in self.db_cur.fetchall()]
+
+        return names
 
     def post_video_summaries_db(self, _file_name, _start_time, _end_time, _summary):
         insert_query = """
