@@ -2,7 +2,8 @@ import base64
 import cv2
 
 from langchain_core.messages import HumanMessage
-from langchain_community.chat_models import ChatOllama
+# from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 
 from debug_core import DebugCore
 from postgres_core import PostgresCore
@@ -51,31 +52,34 @@ class OllamaCore:
         # """
 
         feature_prompt_text = """
-            "Analyze the following image and identify all objects present in the image. For each object, provide the following information:
+            Analyze the following image and identify all objects present in the image. For each object, provide the following information:
 
-            The bounding box position, specifying the coordinates for the top-left corner (top_left_x, top_left_y) and the bottom-right corner (bottom_right_x, bottom_right_y).
-            A list of key features that were used to identify this object (e.g., color, texture, shape, etc.).
-            The context of what this object is doing in the whole environment
+            - The bounding box position, specifying the coordinates for the top-left corner (top_left_x, top_left_y) and the bottom-right corner (bottom_right_x, bottom_right_y).
+            - A list of key features that were used to identify this object (e.g., color, texture, shape, etc.).
+            
+            and a overall description of what did you see in the entire image
 
-            Please return the output strictly in the following JSON format:
+            Please return the output strictly in the following JSON format (with "objects" and "description"):
 
             {
                 "objects": {
                     "object_name_1": {
                         "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
                         "features": ["features_1", "features_2", "feature_3"],
-                        "context": "xxx"
                     },
                     "object_name_2": {
                         "position": ["top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y"],
                         "features": ["features_1", "features_2", "feature_3"],
-                        "context": "xxx"
                     }
+                    // Make sure to fill in all required information for each object detected in the image.
                     // Add more objects as necessary
                 }
+
+                "description" : "xxx" // overall description of what did you see in this image
             }
 
-            Make sure to fill in all required information for each object detected in the image."
+            each output must contain the "objects" and "description" key
+
         """
 
         target_prompt = feature_prompt_text
@@ -89,7 +93,11 @@ class OllamaCore:
         return cleaned_summary_result
 
     def image_summarize(self, img_base64, prompt):
-        chat = ChatOllama(base_url=self.ollama_server_ip, model=self.img_model)
+        chat = ChatOllama(
+            base_url=self.ollama_server_ip,
+            model=self.img_model,
+            model_kwargs={ "response_format": { "type": "json_object" } },
+            )
 
         image_url = f"data:image/jpeg;base64,{img_base64}"
 
@@ -187,10 +195,16 @@ class OllamaCore:
 if __name__ == '__main__':
     ollama_core = OllamaCore()
 
-    # print(ollama_core.chat_text("I want to write a promot"))
+    print(ollama_core.chat_text("""
+                                give me a list of objects shows in the image, and their bounding box coordinated, "https://grist.org/wp-content/uploads/2014/02/nyc-complete-street-brooklyn-cropped.jpg?quality=75&strip=all"
+                                """))
 
     # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
     # ollama_core.chat_img(base64_image)
 
     # ollama_core.video_summary("../data/videos/fast_and_furious.mp4", 0, 30, 10)
-    ollama_core.video_summary_video_feed_storage(7,15)
+    # ollama_core.video_summary_video_feed_storage(7,15)
+
+
+
+    # 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

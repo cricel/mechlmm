@@ -37,7 +37,7 @@ class PostgresCore:
                         id SERIAL PRIMARY KEY,
                         name VARCHAR(255) UNIQUE,
                         features TEXT[],
-                        reference_videos TEXT[][],
+                        reference_videos INT[][],
                         summary TEXT
                     );
                 """
@@ -47,9 +47,9 @@ class PostgresCore:
                 """
                 CREATE TABLE IF NOT EXISTS video_summaries (
                     id SERIAL PRIMARY KEY,
-                    file_name VARCHAR(255) NOT NULL,
-                    start_time TIMESTAMP NOT NULL,
-                    end_time TIMESTAMP NOT NULL,
+                    file_name VARCHAR(255) UNIQUE,
+                    start_time INT NOT NULL,
+                    end_time INT NOT NULL,
                     summary TEXT
                 );
                 """
@@ -95,14 +95,75 @@ class PostgresCore:
         names = [row[0] for row in self.db_cur.fetchall()]
 
         return names
+    
+    def get_video_summary_list_db(self):
+        select_query = """
+            SELECT *
+            FROM video_summaries
+        """
+        self.db_cur.execute(select_query)
 
-    def post_video_summaries_db(self, _file_name, _start_time, _end_time, _summary):
+        rows = self.db_cur.fetchall()
+        # print(rows)
+        # data = [dict(row) for row in rows]
+
+        return rows
+        
+    
+    def get_video_summary_record_by_name_db(self, _filename):
+        select_query = """
+            SELECT * 
+            FROM video_summaries 
+            WHERE file_name = %s
+        """
+        self.db_cur.execute(select_query, (_filename,))
+        result = self.db_cur.fetchone()
+
+        if result:
+            col_names = [desc[0] for desc in self.db_cur.description]
+            return dict(zip(col_names, result))
+        else:
+            return None
+        
+    def get_video_summary_name_list_db(self):
+        select_query = """
+            SELECT file_name
+            FROM video_summaries
+        """
+        self.db_cur.execute(select_query)
+
+        names = [row[0] for row in self.db_cur.fetchall()]
+
+        return names
+
+    # def post_video_summaries_db(self, _file_name, _start_time, _end_time, _summary):
+    #     insert_query = """
+    #         INSERT INTO video_summaries (file_name, start_time, end_time, summary)
+    #         VALUES (%s, %s, %s, %s);
+    #         """
+        
+    #     self.db_cur.execute(insert_query, (_file_name, _start_time, _end_time, _summary))
+
+    #     self.db_conn.commit()
+
+    def post_video_record_db(self, _file_name, _start_time, _end_time):
         insert_query = """
-            INSERT INTO video_summaries (file_name, start_time, end_time, summary)
-            VALUES (%s, %s, %s, %s);
+            INSERT INTO video_summaries (file_name, start_time, end_time)
+            VALUES (%s, %s, %s);
             """
         
-        self.db_cur.execute(insert_query, (_file_name, _start_time, _end_time, _summary))
+        self.db_cur.execute(insert_query, (_file_name, _start_time, _end_time))
+
+        self.db_conn.commit()
+
+    def post_video_summary_db(self, _file_name, _summary):
+        insert_query = """
+            UPDATE video_summaries
+            SET summary = %s
+            WHERE file_name = %s
+        """
+        
+        self.db_cur.execute(insert_query, (_summary, _file_name))
 
         self.db_conn.commit()
 

@@ -74,7 +74,7 @@ class VisionCore:
         if current_time - self.start_time >= self.saved_video_duration or self.reference_video is None:
             if self.reference_video is not None:
                 self.reference_video.release()
-                self.video_summary_analyzer(self.video_filename, self.start_time, current_time)
+                # self.video_summary_analyzer(self.video_filename, self.start_time, current_time)
             
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             self.video_filename = f'output_video_{timestamp}.mp4'
