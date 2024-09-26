@@ -19,7 +19,8 @@ import utilities_core
 class MechLLMCore:
     def __init__(self):
         self.ollama_model = ChatOllama(
-            base_url="http://192.168.1.182:11434",
+            # base_url="http://192.168.1.182:11434",
+            base_url="http://192.168.1.173:11434",
             model="llama3.2",
             temperature=0,
         )
@@ -50,12 +51,12 @@ class MechLLMCore:
 
 
         results, _ = mechllm_core.chat_text(f"""
-                                    Dont answer the question, just parser the following question and find the similar item in the list provided: 
+                                    Dont answer the question, just parser the following question and find the list of similar items in the list provided: 
                                     {_question}
                                 
                                     {db_item_list}
 
-                                    return the excat name of the matching item in provided list as array,
+                                    return the exact name of the matching item in provided list as array, if none found, return None
                                     Only return the JSON array, no need for the reasoning or any additional content.
                                     
                                     """
@@ -66,11 +67,18 @@ class MechLLMCore:
         output_results = utilities_core.llm_output_list_cleaner(results)
 
         video_list = []
+        object_db_list = []
         for result in output_results:
             _record_result = self.postgres_core.get_objects_map_record_by_name_db(result)
+            object_db_list.append(_record_result)
+            self.debug_core.log_key("---++++++----")
+            self.debug_core.log_key(result)
+            self.debug_core.log_key(_record_result)
             for video_time in _record_result["reference_videos"]:
                 matching_video = self.find_video_in_range(db_video_list, video_time)
                 video_list = list(set(video_list + matching_video))
+                self.debug_core.log_key("----------------------")
+                self.debug_core.log_key(video_list)
         
         self.debug_core.log_info("------ list of video used ------")
         self.debug_core.log_info(video_list)
@@ -81,18 +89,45 @@ class MechLLMCore:
             _record_result = self.postgres_core.get_video_summary_record_by_name_db(video)
             video_summary_list.append(_record_result["summary"])
 
-        self.debug_core.log_info("------ list of knowledge used ------")
+        self.debug_core.log_key("------ list of knowledge used ------")
         self.debug_core.log_info(video_summary_list)
+        self.debug_core.log_info(object_db_list)
 
         results, _ = mechllm_core.chat_text(f"""
-                                    given the context below, answer the question in summary: "{_question}"
+                                    given the information below, answer the question in summary if answer found, otherwise, simply return "None": "{_question}"
 
+                                    List of object Info:
+                                    {object_db_list}
+                                    List of context info:
                                     {video_summary_list}
                                     """
                                     )
         
         self.debug_core.log_key("------ chat_text_knowledge result ------")
         self.debug_core.log_info(results)
+
+        # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
+        video_detail_summary_list = []
+        # print(type(results))
+        if(results == "None"):
+            for video in video_list:
+                video_detail_summary_list.append(self.chat_video("../output/videos/" + video, _question))
+
+        
+            results, _ = mechllm_core.chat_text(f"""
+                                        given the information below, answer the question in summary: "{_question}"
+
+                                        Detail context analyze:
+                                        {video_detail_summary_list}
+                                        List of context info:
+                                        {object_db_list}
+                                        {video_summary_list}
+                                        """
+                                        )
+            
+            self.debug_core.log_key("------ 2222 chat_text_knowledge result ------")
+            self.debug_core.log_info(results)
+        
 
         return results
 
@@ -230,7 +265,7 @@ class MechLLMCore:
         print(conversion_list)
         video_summary, _ = self.chat_text(
             f"""
-                given the context below, answer the question in summary if the question can be answered, otherwise, simply return "None":
+                given the context below, answer the question in summary:
                 
                 Question:
                 "{_question}"
@@ -249,8 +284,8 @@ if __name__ == '__main__':
     mechllm_core = MechLLMCore()
 
     # mechllm_core.chat_text_knowledge("what is the guy doing")
-
-    mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
+    mechllm_core.chat_text_knowledge("what is in front of the wall")
+    # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
 
     # print(mechllm_core.chat_text("""
     #                             how are you"
