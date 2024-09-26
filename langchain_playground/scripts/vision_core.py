@@ -12,6 +12,7 @@ import utilities_core
 import os
 import time
 from datetime import datetime
+import numpy as np
 import threading
 
 class VisionCore:
@@ -30,13 +31,21 @@ class VisionCore:
         if(ros_enable):
             self.node = Node('long_running_function_node')
             
-            self.subscription = self.node.create_subscription(
+            self.image_subscription = self.node.create_subscription(
                 Image, 
-                '/camera/image_raw', 
-                self.camera_callback, 
+                '/intel_realsense_r200_depth/image_raw', 
+                self.raw_image_callback, 
                 10
             )
-            self.subscription
+            self.image_subscription
+
+            self.depth_subscription = self.node.create_subscription(
+                Image, 
+                '/intel_realsense_r200_depth/depth/image_raw', 
+                self.depth_image_callback, 
+                10
+            )
+            self.depth_subscription
             
             self.br = CvBridge()
         else:
@@ -61,10 +70,12 @@ class VisionCore:
 
         self.lock = threading.Lock()
         self.is_llm_processing = False
+
+        self.current_depth_frame = None
    
 
-    ########## ROS
-    def camera_callback(self, data):
+    ########## ROS ##########
+    def raw_image_callback(self, data):
         current_frame = self.br.imgmsg_to_cv2(data)
         if(self.frame_width == None):
             self.frame_height, self.frame_width, channels = current_frame.shape
@@ -77,13 +88,36 @@ class VisionCore:
         cv2.imshow("Robot Camera", current_frame)
         
         cv2.waitKey(1)
+
+    def depth_image_callback(self, data):
+        try:
+            depth_image = self.br.imgmsg_to_cv2(data, desired_encoding='passthrough')
+        except Exception as e:
+            self.node.get_logger().error(f"Failed to convert image: {e}")
+            return
+
+        if depth_image is not None:
+            x, y = 120, 120
+
+            depth_image = cv2.normalize(depth_image, None, 0, 255, cv2.NORM_MINMAX)
+            depth_image = np.uint8(depth_image)
+
+            self.current_depth_frame = depth_image
+
+            # depth_value = depth_image[y, x]
+            # print( depth_value * 0.001)
+            # print(depth_image.shape)
+
+            cv2.imshow('Depth Image', depth_image)
+            cv2.waitKey(1)
+
   
     def spin(self):
         rclpy.spin(self.node)
 
     def destroy_node(self):
         self.node.destroy_node()
-    ########## ROS
+    ########## ROS ##########
 
     ########## Live View
     def run(self):
@@ -237,30 +271,6 @@ class VisionCore:
             self.debug_core.log_info("------ features for merge ------")
             self.debug_core.log_info(_db_features)
             self.debug_core.log_info(_current_features)
-
-            # json_schema = {
-            #     "title": "list_merge",
-            #     "description": "combine the item with similar meaning together",
-            #     "type": "object",
-            #     "properties": {
-            #         "item_list": {
-            #             "type": "array",
-            #             "items": {
-            #                 "type": "string"
-            #             },
-            #             "description": "list of items",
-            #         },
-            #     },
-            #     "required": ["item_list"]
-            # }
-
-            # question = f"""
-            #     combine the items with similar meanings from the provided lists below into one dimension array as [item1, item2, item3]. 
-
-            #     {_db_features + _current_features}
-            # """
-
-            # features_summary = self.mechllm_core.chat_text(question, json_schema)
 
             features_summary, _ = self.mechllm_core.chat_text(f"""
                                         Merge the items with similar meanings from the provided lists below. 
