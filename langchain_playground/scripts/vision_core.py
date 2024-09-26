@@ -319,7 +319,7 @@ def ros_main(args=None):
     rclpy.shutdown()
   
 if __name__ == '__main__':
-    # ros_main()
+    ros_main()
 
-    vision_core = VisionCore(False)
-    vision_core.run()
+    # vision_core = VisionCore(False)
+    # vision_core.run()

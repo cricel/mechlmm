@@ -10,6 +10,8 @@ load_dotenv()
 
 import time
 
+import cv2
+
 from debug_core import DebugCore
 from postgres_core import PostgresCore
 import utilities_core
@@ -169,10 +171,86 @@ class MechLLMCore:
 
         return result, _tag
 
+    def chat_video(self, _video_path, _question, _start_time = 0, _end_time = 0, _interval_time = 5):
+        conversion_list = []
+
+        cap = cv2.VideoCapture(_video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        
+        start_frame = int(_start_time * fps)
+        end_frame = 0
+
+        if(end_frame == 0):
+            end_frame = total_frames
+        else:
+            end_frame = int(_end_time * fps)
+        
+        
+        end_frame = min(end_frame, total_frames - 1)
+        
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        
+        current_frame = start_frame
+        
+        while current_frame <= end_frame:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            
+            if (
+                current_frame == start_frame or 
+                (current_frame - start_frame) % (int(_interval_time * fps)) == 0 or 
+                (current_frame == end_frame)
+            ):
+
+                base64_image = utilities_core.opencv_frame_to_base64(frame)
+                image_url = f"data:image/jpeg;base64,{base64_image}"
+                
+                frame_summary, _ = self.chat_img(f"""
+                                                    answer the question if the question can be answered, otherwise, simply return "None"
+                                                    
+                                                    Question:
+                                                    {_question}
+                                                """,
+                                              image_url)
+
+                self.debug_core.log_key("------ llm video single frame analyzer output ------")
+                self.debug_core.log_info(int(current_frame/fps))
+                self.debug_core.log_info(frame_summary.content)
+                self.debug_core.log_key("^^^^^^^^^^^^^^ llm video single frame analyzer output ^^^^^^^^^^^^^^")
+                
+                conversion_list.append(frame_summary.content)
+            
+            current_frame += 1
+        
+        cap.release()
+
+        self.debug_core.log_key("^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^")
+        print(conversion_list)
+        video_summary, _ = self.chat_text(
+            f"""
+                given the context below, answer the question in summary if the question can be answered, otherwise, simply return "None":
+                
+                Question:
+                "{_question}"
+                
+                Context:
+                {conversion_list}
+            """
+        )
+        self.debug_core.log_info("------ ------------------------- ------")
+        self.debug_core.log_info("------ llm video analyzer output ------")
+        self.debug_core.log_info(video_summary)
+
+        return video_summary
+    
 if __name__ == '__main__':
     mechllm_core = MechLLMCore()
 
-    mechllm_core.chat_text_knowledge("what is the guy doing")
+    # mechllm_core.chat_text_knowledge("what is the guy doing")
+
+    mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
 
     # print(mechllm_core.chat_text("""
     #                             how are you"
