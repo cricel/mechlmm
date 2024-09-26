@@ -18,7 +18,7 @@ class MechLLMCore:
     def __init__(self):
         self.ollama_model = ChatOllama(
             base_url="http://192.168.1.182:11434",
-            model="llama3.1",
+            model="llama3.2",
             temperature=0,
         )
 
@@ -31,7 +31,7 @@ class MechLLMCore:
         self.debug_core.verbose = 3
 
         self.postgres_core = PostgresCore(False)
-
+        # self.postgres_core = None
     def chat(self):
         pass
     
