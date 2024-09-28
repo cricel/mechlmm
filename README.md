@@ -21,9 +21,16 @@ source install/setup.bash
 
 # Run Simulation World
 ros2 launch mechllm_bringup simulation_demo.launch.py 
+
+## The Data Output is at '/path_to_folder/llm-smart-home/mechllm_ws/install/mechllm_bringup/share/mechllm_bringup`
+# ROS2 Large Multimodal Model Testing
+ros2 run mechllm_bringup mechllm_qa
+
+# ROS2 Vison Integration Testing
+ros2 run mechllm_bringup vision
 ```
 
-## Run Detection Testing Code
+## Run Detection Testing Code WITHOUT ROS
 ```
 cd langchain_playground/scripts
 
