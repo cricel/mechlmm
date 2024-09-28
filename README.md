@@ -1,5 +1,7 @@
 # llm-smart-home
 
+![](./etc/header.gif)
+
 # Setup
 ```
 # Get Source Code
