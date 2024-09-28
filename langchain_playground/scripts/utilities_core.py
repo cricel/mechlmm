@@ -9,8 +9,11 @@ from debug_core import DebugCore
 debug_core = DebugCore()
 debug_core.verbose = 3
 
-VIDEOS_OUTPUT_PATH = "../output/videos"
-IMAGES_OUTPUT_PATH = "../output/images"
+VIDEOS_OUTPUT_PATH = "./output/videos"
+IMAGES_OUTPUT_PATH = "./output/images"
+
+os.makedirs(VIDEOS_OUTPUT_PATH, exist_ok=True)
+os.makedirs(IMAGES_OUTPUT_PATH, exist_ok=True)
 
 def opencv_frame_to_base64(_frame):
     _, buffer = cv2.imencode('.jpg', _frame)

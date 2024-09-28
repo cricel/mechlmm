@@ -20,7 +20,7 @@ class MechLLMCore:
     def __init__(self):
         self.ollama_model = ChatOllama(
             # base_url="http://192.168.1.182:11434",
-            base_url="http://192.168.1.173:11434",
+            base_url="http://192.168.1.182:11434",
             model="llama3.2",
             temperature=0,
         )
@@ -50,7 +50,7 @@ class MechLLMCore:
         # print(matching_video)
 
 
-        results, _ = mechllm_core.chat_text(f"""
+        results, _ = self.chat_text(f"""
                                     Dont answer the question, just parser the following question and find the list of similar items in the list provided: 
                                     {_question}
                                 
@@ -93,7 +93,7 @@ class MechLLMCore:
         self.debug_core.log_info(video_summary_list)
         self.debug_core.log_info(object_db_list)
 
-        results, _ = mechllm_core.chat_text(f"""
+        results, _ = self.chat_text(f"""
                                     given the information below, answer the question in summary if answer found, otherwise, simply return "None": "{_question}"
 
                                     List of object Info:
@@ -114,7 +114,7 @@ class MechLLMCore:
                 video_detail_summary_list.append(self.chat_video("../output/videos/" + video, _question))
 
         
-            results, _ = mechllm_core.chat_text(f"""
+            results, _ = self.chat_text(f"""
                                         given the information below, answer the question in summary: "{_question}"
 
                                         Detail context analyze:

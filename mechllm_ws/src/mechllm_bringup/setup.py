@@ -23,6 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'mechllm_qa = mechllm_bringup.mechllm_qa:main',
+            'vision = mechllm_bringup.vision:main',
         ],
     },
 )

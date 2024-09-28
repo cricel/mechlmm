@@ -80,6 +80,9 @@ class VisionCore:
             self.object_position_publisher = self.node.create_publisher(PointStamped, '/object_position', 10)
             
             self.br = CvBridge()
+
+            self.tf_buffer = Buffer()
+            self.tf_listener = TransformListener(self.tf_buffer, self.node)
         else:
             self.cam = cv2.VideoCapture(0)
 
@@ -105,8 +108,7 @@ class VisionCore:
 
         self.current_depth_frame = None
 
-        self.tf_buffer = Buffer()
-        self.tf_listener = TransformListener(self.tf_buffer, self.node)
+        
    
 
     ########## ROS ##########
@@ -551,7 +553,9 @@ def ros_main(args=None):
     rclpy.shutdown()
   
 if __name__ == '__main__':
-    ros_main()
+    # Uncomment this to use it for ROS
+    # ros_main()
 
-    # vision_core = VisionCore(False)
-    # vision_core.run()
+    # Uncomment this to use it WITHOUT ROS, and use camera view
+    vision_core = VisionCore(False)
+    vision_core.run()
