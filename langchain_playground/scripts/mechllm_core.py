@@ -15,9 +15,10 @@ import cv2
 from debug_core import DebugCore
 from postgres_core import PostgresCore
 import utilities_core
+import os
 
 class MechLLMCore:
-    def __init__(self):
+    def __init__(self, data_path = "../output"):
         self.ollama_model = ChatOllama(
             # base_url="http://192.168.1.182:11434",
             base_url="http://192.168.1.182:11434",
@@ -35,6 +36,15 @@ class MechLLMCore:
 
         self.postgres_core = PostgresCore(False)
         # self.postgres_core = None
+        self.init_data_path(data_path)
+    
+    def init_data_path(self, _data_path):
+        VIDEOS_OUTPUT_PATH = os.path.join(_data_path, "videos")
+        IMAGES_OUTPUT_PATH = os.path.join(_data_path, "images")
+
+        os.makedirs(VIDEOS_OUTPUT_PATH, exist_ok=True)
+        os.makedirs(IMAGES_OUTPUT_PATH, exist_ok=True)
+
     def chat(self):
         pass
     
@@ -346,12 +356,6 @@ if __name__ == '__main__':
     #                             ))
 
     # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
-    # ollama_core.chat_img(base64_image)
-
-    # ollama_core.video_summary("../data/videos/fast_and_furious.mp4", 0, 30, 10)
-    # ollama_core.video_summary_video_feed_storage(7,15)
-
-    
-
+    # mechllm_core.chat_img(base64_image)
 
     # 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

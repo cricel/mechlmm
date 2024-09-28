@@ -24,11 +24,13 @@ import numpy as np
 import threading
 
 class VisionCore:
-    def __init__(self, ros_enable=False):
+    def __init__(self, ros_enable=False, data_path = "../output"):
         self.mechllm_core = MechLLMCore()
         self.postgres_core = PostgresCore()
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
+
+        self.init_data_path(data_path)
 
         self.clear_old_videos()
         self.video_context_switch_durtion = 20
@@ -109,7 +111,12 @@ class VisionCore:
         self.current_depth_frame = None
 
         
-   
+    def init_data_path(self, _data_path):
+        self.VIDEOS_OUTPUT_PATH = os.path.join(_data_path, "videos")
+        self.IMAGES_OUTPUT_PATH = os.path.join(_data_path, "images")
+
+        os.makedirs(self.VIDEOS_OUTPUT_PATH, exist_ok=True)
+        os.makedirs(self.IMAGES_OUTPUT_PATH, exist_ok=True)
 
     ########## ROS ##########
     def odom_callback(self, data):
@@ -518,9 +525,9 @@ class VisionCore:
         
 
     def clear_old_videos(self):
-        video_files = [f for f in os.listdir(utilities_core.VIDEOS_OUTPUT_PATH) if f.startswith('output_video_') and f.endswith('.mp4')]
+        video_files = [f for f in os.listdir(self.VIDEOS_OUTPUT_PATH) if f.startswith('output_video_') and f.endswith('.mp4')]
         for file in video_files:
-            os.remove(os.path.join(utilities_core.VIDEOS_OUTPUT_PATH, file))
+            os.remove(os.path.join(self.VIDEOS_OUTPUT_PATH, file))
             self.debug_core.log_info(f"Deleted old video file: {file}")
 
     def video_saver(self, frame):
@@ -536,9 +543,9 @@ class VisionCore:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             self.video_filename = f'output_video_{int(time.time())}.mp4'
             
-            self.reference_video = cv2.VideoWriter(os.path.join(utilities_core.VIDEOS_OUTPUT_PATH, self.video_filename), self.fourcc, self.fps, (self.frame_width, self.frame_height))
+            self.reference_video = cv2.VideoWriter(os.path.join(self.VIDEOS_OUTPUT_PATH, self.video_filename), self.fourcc, self.fps, (self.frame_width, self.frame_height))
             self.start_time = current_time
-            self.debug_core.log_info(f"Started recording: {os.path.join(utilities_core.VIDEOS_OUTPUT_PATH, self.video_filename)}")
+            self.debug_core.log_info(f"Started recording: {os.path.join(self.VIDEOS_OUTPUT_PATH, self.video_filename)}")
         
         if self.reference_video is not None:
             self.reference_video.write(frame)
