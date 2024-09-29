@@ -2,6 +2,9 @@ from langchain_community.callbacks import get_openai_callback
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 
+from pydantic import BaseModel
+from langchain.tools import StructuredTool
+
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -17,6 +20,59 @@ from debug_core import DebugCore
 from postgres_core import PostgresCore
 import utilities_core
 import os
+
+import json
+
+# from geometry_msgs.msg import Pose
+
+# Define the Position class
+class Position(BaseModel):
+    x: float
+    y: float
+    z: float
+
+# Define the Orientation class
+class Orientation(BaseModel):
+    x: float
+    y: float
+    z: float
+    w: float
+
+class PoseData(BaseModel):
+    position: Position
+    orientation: Orientation
+
+
+import rclpy
+from rclpy.node import Node
+from geometry_msgs.msg import Twist, Pose
+class TurtleBot3Move(Node):
+
+    def __init__(self):
+        super().__init__('turtlebot3_move')
+        # Create a publisher for the cmd_vel topic
+        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.move_turtlebot()
+
+    def move_turtlebot(self):
+        # Create a new Twist message
+        msg = Twist()
+
+        # Set linear velocity in the x direction (forward)
+        msg.linear.x = 0.01  # 1 cm = 0.01 meters
+
+        # Set the duration for the movement
+        duration = 1.0  # Move for 1 second
+
+        # Publish the message to move the TurtleBot3
+        self.publisher_.publish(msg)
+
+        # Sleep for the duration
+        self.get_clock().sleep_for(rclpy.duration.Duration(seconds=duration))
+
+        # Stop the robot after moving forward by sending zero velocity
+        msg.linear.x = 0.0
+        self.publisher_.publish(msg)
 
 class MechLLMCore:
     def __init__(self, data_path = "../output"):
@@ -39,8 +95,9 @@ class MechLLMCore:
         # self.postgres_core = None
         self.init_data_path(data_path)
 
-        tools = [self.add, self.multiply]
-        self.llm_with_tools = self.open_ai_model.bind_tools(tools)
+        tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
+        # self.llm_with_tools = self.open_ai_model.bind_tools(tools)
+        self.llm_with_tools = self.open_ai_model.bind_tools([self.move_base], tool_choice="any")
         # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
     
     def init_data_path(self, _data_path):
@@ -297,12 +354,29 @@ class MechLLMCore:
     
 
     def chat_tool(self, _question):
+        self.debug_core.log_info("------ llm tool calling ------")
         _result = self.llm_with_tools.invoke(_question)
-        for tool_call in _result.tool_calls:
-            selected_tool = {"add": self.add, "multiply": self.multiply}[tool_call["name"].lower()]
-            tool_output = selected_tool.invoke(tool_call["args"])
-            print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-            print("---")
+        print(_result.tool_calls)
+        self.debug_core.log_info("------ ------")
+
+        return _result
+
+        # function_list = []
+        # function_arg_list = []
+        # for tool_call in _result.tool_calls:
+        #     selected_tool = {"add": self.add, "multiply": self.multiply, "move_base": self.move_base, "move_arm_end_effector": self.move_arm_end_effector, "arrived_stop": self.arrived_stop}[tool_call["name"].lower()]
+        #     function_list.append(selected_tool)
+        #     function_arg_list.append(tool_call["args"])
+        #     # tool_output = selected_tool.invoke(tool_call["args"])
+        #     # print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+        #     # print("---")
+
+        # print(function_list)
+        # print(function_arg_list)
+
+        # return function_list, function_arg_list
+
+
 
     @tool
     def add(a: int, b: int) -> int:
@@ -325,13 +399,189 @@ class MechLLMCore:
         """
         return a * b
     
+    # @tool
+    # def move_base(target_location: Pose) -> bool:
+    #     """move the robot to the target location
 
+    #     Args:
+    #         target_location: the target location robot is gonna move to
+    #     """
+
+    #     return True
     
+    @tool
+    def move_arm_end_effector(target_location: str) -> bool:
+        """move the arm of robot to the target location
+
+        Args:
+            target_location: the target location arm is gonna reach to
+        """
+
+        return True
     
+    @tool
+    def move_base(target_direction: str) -> bool:
+        """move the robot to the target direction for 1cm
+
+        Args:
+            target_location: the target direction robot is gonna move to, it only have four type of value "forward", "left", "right", "back", "stop"
+        """
+        
+        print("move_base....")
+        return True
+
+    @tool
+    def arrived_stop() -> bool:
+        """ stop the robot as it arrived its target position
+
+        """
+        
+        print("arrived_stop....")
+        return True
+    
+
+def move_base(target_direction: str):
+    print(target_direction)
+
 if __name__ == '__main__':
     mechllm_core = MechLLMCore()
 
-    print(mechllm_core.chat_tool("What is 3 * 12? Also, what is 11 + 49?"))
+    current_pose = Pose()
+    target_pose = Pose()
+
+    current_pose.position.x = 0.0
+    current_pose.position.y = 0.0
+
+    current_pose.orientation.w = 1.0
+
+    target_pose.position.x = 3.1
+    target_pose.position.y = -3.0
+    target_pose.orientation.z = -0.15
+    target_pose.orientation.w = 0.98
+
+    pose_dict = {
+        "position": {
+            "x": current_pose.position.x,
+            "y": current_pose.position.y,
+            "z": current_pose.position.z
+        },
+        "orientation": {
+            "x": current_pose.orientation.x,
+            "y": current_pose.orientation.y,
+            "z": current_pose.orientation.z,
+            "w": current_pose.orientation.w
+        }
+    }
+
+    # _result = mechllm_core.chat_tool(
+    #     f"""
+    #         given the data below, the "arm_end_effector" is attached to the "robot_base" and the position is relative position to the "robot_base". 
+
+    #         if I want to grab the "target_obj", what would the sequence of function call, you can call single function multiple time
+
+    #         current robot pose: {current_pose}
+
+    #         target robot pose: {target_pose}
+    #     """
+    # )
+
+    # tool_call = _result.tool_calls[0]
+    # print(tool_call)
+    # selected_tool = {
+    #         "add": mechllm_core.add, "multiply": mechllm_core.multiply, "move_base": mechllm_core.move_base, "move_arm_end_effector": mechllm_core.move_arm_end_effector, "arrived_stop": mechllm_core.arrived_stop
+    #     }[tool_call["name"].lower()]
+
+    # print(selected_tool)
+    # selected_tool.invoke(tool_call["args"])
+
+    # print("--")
+
+    # tt = move_base
+
+    # tt(tool_call["args"]["target_direction"])
+
+
+    # current_pose = {
+    #     "position": {
+    #         "x": 0.0,
+    #         "y": 0.0,
+    #         "z": 0.0,
+    #     },
+    #     "orientation": {
+    #         "x": 0.0,
+    #         "y": 0.0,
+    #         "z": 0.0,
+    #         "w": 1.0,
+    #     }
+    # }
+
+    # target_pose = {
+    #     "position": {
+    #         "x": 2.1,
+    #         "y": -1.0,
+    #         "z": 0.0,
+    #     },
+    #     "orientation": {
+    #         "x": 0.0,
+    #         "y": 0.0,
+    #         "z": -0.15,
+    #         "w": 0.98,
+    #     }
+    # }
+
+    # # print(mechllm_core.chat_tool("What is 3 * 12? Also, what is 11 + 49?"))
+
+    # _result =(mechllm_core.chat_tool(
+    #     """
+    #         given the data below, the "arm_end_effector" is attached to the "robot_base" and the position is relative position to the "robot_base". 
+
+    #         if I want to grab the "target_obj", what would the sequence of function call, you can call single function multiple time
+
+    #         {
+    #             "robot_base": {
+    #                 "position": {
+    #                     "x": 3,
+    #                     "y": 2,
+    #                     "z": 2
+    #                 }
+    #             },
+    #             "arm_end_effector": {
+    #                 "position": {
+    #                     "x": 0,
+    #                     "y": 1,
+    #                     "z": 1
+    #                 }
+    #             }
+    #         }
+
+    #         {
+    #             "target_obj":{
+    #                 "position": {
+    #                     "x": 5,
+    #                     "y": 2,
+    #                     "z": 3
+    #                 }
+    #             }
+    #         }
+    #     """
+    # ))
+
+    # _functions[0].invoke(_args[0])
+
+    # function_list = []
+    # function_arg_list = []
+    # for tool_call in _result.tool_calls:
+    #     selected_tool = {"add": self.add, "multiply": self.multiply, "move_base": self.move_base, "move_arm_end_effector": self.move_arm_end_effector, "arrived_stop": self.arrived_stop}[tool_call["name"].lower()]
+    #     function_list.append(selected_tool)
+    #     function_arg_list.append(tool_call["args"])
+    #     # tool_output = selected_tool.invoke(tool_call["args"])
+    #     # print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+    #     # print("---")
+
+    # print(function_list)
+    # print(function_arg_list)
+
+    # return function_list, function_arg_list
     
     # mechllm_core.chat_text_knowledge("what is the guy doing")
     # mechllm_core.chat_text_knowledge("what is in front of the wall")
