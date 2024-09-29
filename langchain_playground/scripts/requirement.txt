@@ -1,0 +1,8 @@
+opencv-python
+langchain_core
+langchain_ollama
+termcolor
+psycopg2
+langchain_community
+langchain_openai
+langchain_google_genai

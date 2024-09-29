@@ -19,8 +19,8 @@ import utilities_core
 # )
 
 model = ChatOllama(
-    base_url="http://192.168.1.182:11434",
-    model="llama3",
+    base_url="http://localhost:11434",
+    model="llama3.2:1b",
     temperature=0,
 )
 
@@ -30,42 +30,42 @@ model = ChatOllama(
 # )
 
 
-# json_schema = {
-#     "title": "image_analysis",
-#     "description": "give a detail analysis of what happen in the image",
-#     "type": "object",
-#     "properties": {
-#         "objects": {
-#             "type": "object",
-#             "description": "the list of objects",
-#             "properties": {
-#                 "name": {
-#                     "type": "string",
-#                     "description": "the name of the object detected",
-#                 },
-#                 "position": {
-#                     "type": "array",
-#                     "items": {
-#                         "type": "number"
-#                     },
-#                     "description": "the bounding box coordinate of the object detected, such as ['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y']",
-#                 },
-#                 "features": {
-#                     "type": "array",
-#                     "items": {
-#                         "type": "string"
-#                     },
-#                     "description": "the key features of the object detected",
-#                 },
-#             }
-#         },
-#         "description": {
-#             "type": "string",
-#             "description": "Overall description of what is seen in the image"
-#         }
-#     },
-#     "required": ["objects", "description"]
-# }
+json_schema = {
+    "title": "image_analysis",
+    "description": "give a detail analysis of what happen in the image",
+    "type": "object",
+    "properties": {
+        "objects": {
+            "type": "object",
+            "description": "the list of objects",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "the name of the object detected",
+                },
+                "position": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    },
+                    "description": "the bounding box coordinate of the object detected, such as ['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y']",
+                },
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "the key features of the object detected",
+                },
+            }
+        },
+        "description": {
+            "type": "string",
+            "description": "Overall description of what is seen in the image"
+        }
+    },
+    "required": ["objects", "description"]
+}
 
 structured_llm = model.with_structured_output(json_schema)
 

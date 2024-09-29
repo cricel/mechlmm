@@ -1,5 +1,6 @@
 from langchain_community.callbacks import get_openai_callback
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.tools import tool
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
@@ -37,6 +38,10 @@ class MechLLMCore:
         self.postgres_core = PostgresCore(False)
         # self.postgres_core = None
         self.init_data_path(data_path)
+
+        tools = [self.add, self.multiply]
+        self.llm_with_tools = self.open_ai_model.bind_tools(tools)
+        # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
     
     def init_data_path(self, _data_path):
         VIDEOS_OUTPUT_PATH = os.path.join(_data_path, "videos")
@@ -290,11 +295,46 @@ class MechLLMCore:
 
         return video_summary
     
+
+    def chat_tool(self, _question):
+        _result = self.llm_with_tools.invoke(_question)
+        for tool_call in _result.tool_calls:
+            selected_tool = {"add": self.add, "multiply": self.multiply}[tool_call["name"].lower()]
+            tool_output = selected_tool.invoke(tool_call["args"])
+            print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+            print("---")
+
+    @tool
+    def add(a: int, b: int) -> int:
+        """Adds a and b.
+
+        Args:
+            a: first int
+            b: second int
+        """
+        return a + b
+
+
+    @tool
+    def multiply(a: int, b: int) -> int:
+        """Multiplies a and b.
+
+        Args:
+            a: first int
+            b: second int
+        """
+        return a * b
+    
+
+    
+    
 if __name__ == '__main__':
     mechllm_core = MechLLMCore()
 
+    print(mechllm_core.chat_tool("What is 3 * 12? Also, what is 11 + 49?"))
+    
     # mechllm_core.chat_text_knowledge("what is the guy doing")
-    mechllm_core.chat_text_knowledge("what is in front of the wall")
+    # mechllm_core.chat_text_knowledge("what is in front of the wall")
     # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
 
     # print(mechllm_core.chat_text("""
