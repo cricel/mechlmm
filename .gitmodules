@@ -1,0 +1,4 @@
+[submodule "mechllm_ws/src/turtlebot3_manipulation"]
+	path = mechllm_ws/src/turtlebot3_manipulation
+	url = https://github.com/ROBOTIS-GIT/turtlebot3_manipulation.git
+	branch = humble-devel
