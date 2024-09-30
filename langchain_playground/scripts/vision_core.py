@@ -1,20 +1,18 @@
 IS_ROS_ENABLE = False
+
 if(IS_ROS_ENABLE):
-    try:
-        import rclpy
-        from rclpy.node import Node
-        from sensor_msgs.msg import Image, CameraInfo
-        from geometry_msgs.msg import PoseStamped, PointStamped
-        from std_msgs.msg import Header
-        from visualization_msgs.msg import Marker
-        from nav_msgs.msg import Odometry
-        from cv_bridge import CvBridge
-        import tf_transformations
-        from tf2_geometry_msgs import do_transform_point
-        from tf_transformations import quaternion_matrix
-        from tf2_ros import Buffer, TransformListener
-    except:
-        print("Ignore ROS Library Import")
+    import rclpy
+    from rclpy.node import Node
+    from sensor_msgs.msg import Image, CameraInfo
+    from geometry_msgs.msg import PoseStamped, PointStamped
+    from std_msgs.msg import Header
+    from visualization_msgs.msg import Marker
+    from nav_msgs.msg import Odometry
+    from cv_bridge import CvBridge
+    import tf_transformations
+    from tf2_geometry_msgs import do_transform_point
+    from tf_transformations import quaternion_matrix
+    from tf2_ros import Buffer, TransformListener
 
 import cv2
 
