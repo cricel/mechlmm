@@ -1,15 +1,21 @@
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import PoseStamped, PointStamped
-from std_msgs.msg import Header
-from visualization_msgs.msg import Marker
-from nav_msgs.msg import Odometry
-from cv_bridge import CvBridge
-import tf_transformations
-from tf2_geometry_msgs import do_transform_point
-from tf_transformations import quaternion_matrix
-from tf2_ros import Buffer, TransformListener
+IS_ROS_ENABLE = False
+if(IS_ROS_ENABLE):
+    try:
+        import rclpy
+        from rclpy.node import Node
+        from sensor_msgs.msg import Image, CameraInfo
+        from geometry_msgs.msg import PoseStamped, PointStamped
+        from std_msgs.msg import Header
+        from visualization_msgs.msg import Marker
+        from nav_msgs.msg import Odometry
+        from cv_bridge import CvBridge
+        import tf_transformations
+        from tf2_geometry_msgs import do_transform_point
+        from tf_transformations import quaternion_matrix
+        from tf2_ros import Buffer, TransformListener
+    except:
+        print("Ignore ROS Library Import")
+
 import cv2
 
 from mechllm_core import MechLLMCore
@@ -86,7 +92,7 @@ class VisionCore:
             self.tf_buffer = Buffer()
             self.tf_listener = TransformListener(self.tf_buffer, self.node)
         else:
-            self.cam = cv2.VideoCapture(0)
+            self.cam = cv2.VideoCapture(1)
 
             self.frame_width = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
             self.frame_height = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -560,9 +566,10 @@ def ros_main(args=None):
     rclpy.shutdown()
   
 if __name__ == '__main__':
-    # Uncomment this to use it for ROS
-    # ros_main()
-
-    # Uncomment this to use it WITHOUT ROS, and use camera view
-    vision_core = VisionCore(False)
-    vision_core.run()
+    if(IS_ROS_ENABLE):
+        # Uncomment this to use it for ROS
+        ros_main()
+    else:
+        # Uncomment this to use it WITHOUT ROS, and use camera view
+        vision_core = VisionCore(False)
+        vision_core.run()

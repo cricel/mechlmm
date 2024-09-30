@@ -42,38 +42,6 @@ class PoseData(BaseModel):
     position: Position
     orientation: Orientation
 
-
-import rclpy
-from rclpy.node import Node
-from geometry_msgs.msg import Twist, Pose
-class TurtleBot3Move(Node):
-
-    def __init__(self):
-        super().__init__('turtlebot3_move')
-        # Create a publisher for the cmd_vel topic
-        self.publisher_ = self.create_publisher(Twist, '/cmd_vel', 10)
-        self.move_turtlebot()
-
-    def move_turtlebot(self):
-        # Create a new Twist message
-        msg = Twist()
-
-        # Set linear velocity in the x direction (forward)
-        msg.linear.x = 0.01  # 1 cm = 0.01 meters
-
-        # Set the duration for the movement
-        duration = 1.0  # Move for 1 second
-
-        # Publish the message to move the TurtleBot3
-        self.publisher_.publish(msg)
-
-        # Sleep for the duration
-        self.get_clock().sleep_for(rclpy.duration.Duration(seconds=duration))
-
-        # Stop the robot after moving forward by sending zero velocity
-        msg.linear.x = 0.0
-        self.publisher_.publish(msg)
-
 class MechLLMCore:
     def __init__(self, data_path = "../output"):
         self.ollama_model = ChatOllama(
@@ -361,22 +329,6 @@ class MechLLMCore:
 
         return _result
 
-        # function_list = []
-        # function_arg_list = []
-        # for tool_call in _result.tool_calls:
-        #     selected_tool = {"add": self.add, "multiply": self.multiply, "move_base": self.move_base, "move_arm_end_effector": self.move_arm_end_effector, "arrived_stop": self.arrived_stop}[tool_call["name"].lower()]
-        #     function_list.append(selected_tool)
-        #     function_arg_list.append(tool_call["args"])
-        #     # tool_output = selected_tool.invoke(tool_call["args"])
-        #     # print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-        #     # print("---")
-
-        # print(function_list)
-        # print(function_arg_list)
-
-        # return function_list, function_arg_list
-
-
 
     @tool
     def add(a: int, b: int) -> int:
@@ -446,32 +398,32 @@ def move_base(target_direction: str):
 if __name__ == '__main__':
     mechllm_core = MechLLMCore()
 
-    current_pose = Pose()
-    target_pose = Pose()
+    # current_pose = PoseData()
+    # target_pose = PoseData()
 
-    current_pose.position.x = 0.0
-    current_pose.position.y = 0.0
+    # current_pose.position.x = 0.0
+    # current_pose.position.y = 0.0
 
-    current_pose.orientation.w = 1.0
+    # current_pose.orientation.w = 1.0
 
-    target_pose.position.x = 3.1
-    target_pose.position.y = -3.0
-    target_pose.orientation.z = -0.15
-    target_pose.orientation.w = 0.98
+    # target_pose.position.x = 3.1
+    # target_pose.position.y = -3.0
+    # target_pose.orientation.z = -0.15
+    # target_pose.orientation.w = 0.98
 
-    pose_dict = {
-        "position": {
-            "x": current_pose.position.x,
-            "y": current_pose.position.y,
-            "z": current_pose.position.z
-        },
-        "orientation": {
-            "x": current_pose.orientation.x,
-            "y": current_pose.orientation.y,
-            "z": current_pose.orientation.z,
-            "w": current_pose.orientation.w
-        }
-    }
+    # pose_dict = {
+    #     "position": {
+    #         "x": current_pose.position.x,
+    #         "y": current_pose.position.y,
+    #         "z": current_pose.position.z
+    #     },
+    #     "orientation": {
+    #         "x": current_pose.orientation.x,
+    #         "y": current_pose.orientation.y,
+    #         "z": current_pose.orientation.z,
+    #         "w": current_pose.orientation.w
+    #     }
+    # }
 
     # _result = mechllm_core.chat_tool(
     #     f"""
@@ -484,6 +436,7 @@ if __name__ == '__main__':
     #         target robot pose: {target_pose}
     #     """
     # )
+    # print(_result)
 
     # tool_call = _result.tool_calls[0]
     # print(tool_call)
@@ -591,29 +544,29 @@ if __name__ == '__main__':
     #                             how are you"
     #                             """))
     
-    # json_schema = {
-    #     "title": "story",
-    #     "description": "give me a break down of story",
-    #     "type": "object",
-    #     "properties": {
-    #         "names": {
-    #             "type": "array",
-    #             "items": {
-    #                 "type": "string"
-    #             },
-    #             "description": "list of name that shows up in the story",
-    #         },
-    #         "locations": {
-    #             "type": "string",
-    #             "description": "list of locations that shows up in the story"
-    #         }
-    #     },
-    #     "required": ["names", "locations"]
-    # }
+    json_schema = {
+        "title": "story",
+        "description": "give me a break down of story",
+        "type": "object",
+        "properties": {
+            "names": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "list of name that shows up in the story",
+            },
+            "locations": {
+                "type": "string",
+                "description": "list of locations that shows up in the story"
+            }
+        },
+        "required": ["names", "locations"]
+    }
     
-    # print(mechllm_core.chat_text("""
-    #                             write me a short story with names and location"
-    #                             """, json_schema))
+    print(mechllm_core.chat_text("""
+                                write me a short story with names and location"
+                                """, json_schema))
     
     # db_objects = ["wall","person", "background", "phone", "cloth"]
 
