@@ -2,3 +2,6 @@
 	path = mechllm_ws/src/turtlebot3_manipulation
 	url = https://github.com/ROBOTIS-GIT/turtlebot3_manipulation.git
 	branch = humble-devel
+[submodule "mechllm_ws/src/py_trees_ros_tutorials"]
+	path = mechllm_ws/src/py_trees_ros_tutorials
+	url = https://github.com/splintered-reality/py_trees_ros_tutorials.git
