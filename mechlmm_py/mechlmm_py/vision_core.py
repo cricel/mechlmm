@@ -45,11 +45,6 @@ class VisionCore:
         self.debug_core.log_info(f"Current frame timestamp: {self.elapsed_time} s")
             
         json_object, _tag = self.image_context_analyzer(_frame)
-        self.debug_core.log_key("=======================================")
-        self.debug_core.log_key(json_object["objects"][0]["name"])
-        self.debug_core.log_key(json_object["objects"][0]["position"])
-        self.temp_bounding_box = json_object["objects"][0]["position"]
-        self.debug_core.log_key("=======================================")
         
         try:
             self.frame_context_list.append(json_object["description"])
@@ -100,6 +95,8 @@ class VisionCore:
         except Exception as e:
                     self.debug_core.log_warning("------ Error on Video Processing  ------")
                     self.debug_core.log_warning(e)
+
+        return json_object
 
 
     def image_context_analyzer(self, _frame):
