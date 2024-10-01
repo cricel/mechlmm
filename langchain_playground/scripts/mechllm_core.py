@@ -7,7 +7,6 @@ from langchain.tools import StructuredTool
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -191,9 +190,9 @@ class MechLLMCore:
         text_llm = None
 
         if(_json_schema):
-            text_llm = self.ollama_model.with_structured_output(_json_schema)
+            text_llm = self.open_ai_model.with_structured_output(_json_schema)
         else:
-            text_llm = self.ollama_model
+            text_llm = self.open_ai_model
 
         result = text_llm.invoke(
             [

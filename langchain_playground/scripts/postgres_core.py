@@ -1,5 +1,9 @@
 import psycopg2
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class PostgresCore:
     def __init__(self, reset = True):
@@ -8,9 +12,9 @@ class PostgresCore:
     def init_db(self, _reset):
         self.db_conn = psycopg2.connect(
             host = "localhost",
-            database = "mechllm",
-            user = "postgres",
-            password = "qwepoi123",
+            database = "mechlmm",
+            user = os.getenv('POSTGRESQL_USER'),
+            password = os.getenv('POSTGRESQL_PASSWORD'),
             port = 5432
         )
 

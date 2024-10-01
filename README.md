@@ -11,6 +11,18 @@ git clone https://github.com/cricel/llm-smart-home.git
 # Add following into `~/.bashrc`
 export PYTHONPATH=/path_to_folder/llm-smart-home/langchain_playground/scripts:$PYTHONPATH
 ```
+
+## Postgresql
+```
+## user:~$
+sudo -i -u postgres
+
+## postgres@user:~$ 
+psql
+
+## postgres=# 
+ALTER USER postgres PASSWORD 'mynewpassword';
+```
 ## Simulation
 ```
 # Install ROS2 Humble if not installed
