@@ -1,7 +1,6 @@
 import cv2
 
-from mechlmm_py import VisionCore
-from mechlmm_py import DebugCore
+from mechlmm_py import VisionCore, DebugCore
 
 import threading
 import time
@@ -16,6 +15,8 @@ class CameraView:
         self.debug_core.verbose = 3
 
         self.cam = cv2.VideoCapture(1)
+
+        self.lmm_result = None
 
         self.vision_core.frame_width = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vision_core.frame_height = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -38,6 +39,10 @@ class CameraView:
             with self.lock:
                 self.latest_frame = frame.copy()
 
+            if(self.lmm_result):
+                temp_bounding_box = self.lmm_result["objects"][0]["position"]
+                cv2.putText(frame, self.lmm_result["objects"][0]["name"], (temp_bounding_box[0] + 10, temp_bounding_box[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+                cv2.rectangle(frame, (temp_bounding_box[0], temp_bounding_box[1]), (temp_bounding_box[2], temp_bounding_box[3]), (255, 0, 0), 2)
             cv2.imshow('Live Camera', frame)
 
             if cv2.waitKey(1) == ord('q'):
@@ -52,7 +57,7 @@ class CameraView:
                     frame = None
 
             if frame is not None:
-                self.vision_core.frame_analyzer(frame)
+                self.lmm_result = self.vision_core.frame_analyzer(frame)
             
             time.sleep(0.1)
 
