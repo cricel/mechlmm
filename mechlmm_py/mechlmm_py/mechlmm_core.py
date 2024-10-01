@@ -8,19 +8,11 @@ from langchain.tools import StructuredTool
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 
-from dotenv import load_dotenv
-load_dotenv()
-
-import time
-
 import cv2
 
-from debug_core import DebugCore
-from postgres_core import PostgresCore
-import utilities_core
-import os
-
-import json
+from .debug_core import DebugCore
+from .postgres_core import PostgresCore
+from . import utilities_core
 
 # from geometry_msgs.msg import Pose
 
@@ -41,7 +33,7 @@ class PoseData(BaseModel):
     position: Position
     orientation: Orientation
 
-class MechLLMCore:
+class MechLMMCore:
     def __init__(self, data_path = "../output"):
         self.ollama_model = ChatOllama(
             base_url="http://192.168.1.182:11434",
@@ -385,7 +377,7 @@ def move_base(target_direction: str):
     print(target_direction)
 
 if __name__ == '__main__':
-    mechllm_core = MechLLMCore()
+    mechlmm_core = MechLMMCore()
 
     # current_pose = PoseData()
     # target_pose = PoseData()
@@ -553,7 +545,7 @@ if __name__ == '__main__':
         "required": ["names", "locations"]
     }
     
-    print(mechllm_core.chat_text("""
+    print(mechlmm_core.chat_text("""
                                 write me a short story with names and location"
                                 """, json_schema))
     

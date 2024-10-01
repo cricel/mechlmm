@@ -1,11 +1,14 @@
 import cv2
 
-from vision_core import VisionCore
-from debug_core import DebugCore
+from mechlmm_py import VisionCore
+from mechlmm_py import DebugCore
 
 import threading
 
 import time
+
+from dotenv import load_dotenv
+load_dotenv()
 
 class CameraView:
     def __init__(self, _data_path = "../output"):
@@ -13,7 +16,7 @@ class CameraView:
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
 
-        self.cam = cv2.VideoCapture(1)
+        self.cam = cv2.VideoCapture(0)
 
         self.vision_core.frame_width = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vision_core.frame_height = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))

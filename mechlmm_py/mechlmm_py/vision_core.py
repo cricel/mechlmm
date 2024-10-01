@@ -1,9 +1,9 @@
 import cv2
 
-from mechllm_core import MechLLMCore
-from postgres_core import PostgresCore
-from debug_core import DebugCore
-import utilities_core
+from .mechlmm_core import MechLMMCore
+from .postgres_core import PostgresCore
+from .debug_core import DebugCore
+from . import utilities_core
 
 import os
 import time
@@ -11,7 +11,7 @@ from datetime import datetime
 
 class VisionCore:
     def __init__(self, _data_path = "../output"):
-        self.mechllm_core = MechLLMCore()
+        self.mechlmm_core = MechLMMCore()
         self.postgres_core = PostgresCore()
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
@@ -52,7 +52,6 @@ class VisionCore:
         self.debug_core.log_key("=======================================")
         
         try:
-            # Save Video Summary
             self.frame_context_list.append(json_object["description"])
 
             self.debug_core.log_key("------ video check-----")
@@ -62,7 +61,7 @@ class VisionCore:
 
             if(_tag["filename"] != self.current_video_filename):
                 question = "The following content is a list of summary of continues frame from live view, return the summary of what happen in a short paragraph : \n\n" + '\n'.join(self.frame_context_list)
-                _result, tag = self.mechllm_core.chat_text(question, None, _tag)
+                _result, tag = self.mechlmm_core.chat_text(question, None, _tag)
 
                 self.debug_core.log_key("------ video summary-----")
                 self.debug_core.log_info(_result)
@@ -149,7 +148,7 @@ class VisionCore:
             "required": ["objects", "description"]
         }
 
-        _result = self.mechllm_core.chat_img(question, image_url, json_schema, tag)
+        _result = self.mechlmm_core.chat_img(question, image_url, json_schema, tag)
 
         return _result
     
@@ -182,7 +181,7 @@ class VisionCore:
             self.debug_core.log_info(_db_features)
             self.debug_core.log_info(_current_features)
 
-            features_summary, _ = self.mechllm_core.chat_text(f"""
+            features_summary, _ = self.mechlmm_core.chat_text(f"""
                                         Merge the items with similar meanings from the provided lists below. 
                                         Format the final output as one single list as [feature1, feature2, feature3]. 
                                         Only return the JSON array of features, no need for the reasoning or any additional content.

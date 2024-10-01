@@ -4,7 +4,8 @@ import ast
 
 import os
 from datetime import datetime, timedelta
-from debug_core import DebugCore
+
+from .debug_core import DebugCore
 
 debug_core = DebugCore()
 debug_core.verbose = 3

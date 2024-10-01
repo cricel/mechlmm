@@ -14,6 +14,8 @@ from cv_bridge import CvBridge
     
 import cv2
 
+from mechlmm import VisionCore
+
 from mechllm_core import MechLLMCore
 from postgres_core import PostgresCore
 from debug_core import DebugCore

@@ -1,9 +1,5 @@
 import psycopg2
-import json
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class PostgresCore:
     def __init__(self, reset = True):

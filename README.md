@@ -10,6 +10,10 @@ git clone https://github.com/cricel/llm-smart-home.git
 # Set MechLLM Core Library as global package
 # Add following into `~/.bashrc`
 export PYTHONPATH=/path_to_folder/llm-smart-home/langchain_playground/scripts:$PYTHONPATH
+
+# Add config into bashrc
+pip install python-dotenv
+dotenv -f .env run -- bash
 ```
 
 ## Postgresql
