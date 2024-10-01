@@ -50,5 +50,30 @@
       </include>
     </model>
 
+    <model name="cube">
+      <static>true</static>
+      <pose>0.7 -0.5 0.15 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>1 0 0 1</ambient> <!-- Red color in RGBA format -->
+            <diffuse>1 0 0 1</diffuse> <!-- Red color in RGBA format -->
+          </material>
+        </visual>
+      </link>
+    </model>
+
   </world>
 </sdf>

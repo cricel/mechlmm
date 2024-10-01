@@ -26,6 +26,7 @@ setup(
             'mechllm_qa = mechllm_bringup.mechllm_qa:main',
             'vision = mechllm_bringup.vision:main',
             'arm_control = mechllm_bringup.arm_control:main',
+            'detect_obj = mechllm_bringup.detect_obj:main',
         ],
     },
 )
