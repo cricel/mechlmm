@@ -59,10 +59,10 @@ class MechVision:
 
         self.vision_core.video_saver(current_frame)
 
-        # thread = threading.Thread(target=self.run_with_lock, args=(current_frame,))
-        # thread.start()
-
-        # cv2.rectangle(current_frame, (self.temp_bounding_box[0], self.temp_bounding_box[1]), (self.temp_bounding_box[2], self.temp_bounding_box[3]), (0, 255, 0), 2)
+        if(self.lmm_result):
+            temp_bounding_box = self.lmm_result["objects"][0]["position"]
+            cv2.putText(current_frame, self.lmm_result["objects"][0]["name"], (temp_bounding_box[0] + 10, temp_bounding_box[1] + 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+            cv2.rectangle(current_frame, (temp_bounding_box[0], temp_bounding_box[1]), (temp_bounding_box[2], temp_bounding_box[3]), (255, 0, 0), 2)
 
         cv2.imshow("Robot Camera", current_frame)
         
