@@ -11,9 +11,14 @@ git clone https://github.com/cricel/llm-smart-home.git
 # Add following into `~/.bashrc`
 export PYTHONPATH=/path_to_folder/llm-smart-home/langchain_playground/scripts:$PYTHONPATH
 
+# install necessary library
+pip install .
 # Add config into bashrc
 pip install python-dotenv
 dotenv -f .env run -- bash
+
+from dotenv import load_dotenv
+load_dotenv()
 ```
 
 ## Postgresql

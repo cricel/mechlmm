@@ -4,7 +4,6 @@ from mechlmm_py import VisionCore
 from mechlmm_py import DebugCore
 
 import threading
-
 import time
 
 from dotenv import load_dotenv
@@ -16,7 +15,7 @@ class CameraView:
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
 
-        self.cam = cv2.VideoCapture(0)
+        self.cam = cv2.VideoCapture(1)
 
         self.vision_core.frame_width = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vision_core.frame_height = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
