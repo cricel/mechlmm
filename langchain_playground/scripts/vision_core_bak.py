@@ -1,23 +1,25 @@
-import rclpy
-from rclpy.node import Node
+IS_ROS_ENABLE = False
 
-from sensor_msgs.msg import Image, CameraInfo
-from geometry_msgs.msg import Quaternion
-from std_msgs.msg import Header
-from visualization_msgs.msg import Marker
-from nav_msgs.msg import Odometry
+if(IS_ROS_ENABLE):
+    import rclpy
+    from rclpy.node import Node
 
-import tf_transformations
-import tf2_ros
+    from sensor_msgs.msg import Image, CameraInfo
+    from geometry_msgs.msg import Quaternion
+    from std_msgs.msg import Header
+    from visualization_msgs.msg import Marker
+    from nav_msgs.msg import Odometry
 
-from cv_bridge import CvBridge
+    import tf_transformations
+    import tf2_ros
+
+    from cv_bridge import CvBridge
     
 import cv2
 
 from mechllm_core import MechLLMCore
 from postgres_core import PostgresCore
 from debug_core import DebugCore
-from vision_core import VisionCore
 import utilities_core
 
 import os
@@ -26,42 +28,88 @@ from datetime import datetime
 import numpy as np
 import threading
 
-class MechVision:
+class VisionCore:
     def __init__(self, ros_enable=False, data_path = "../output"):
         self.mechllm_core = MechLLMCore()
         self.postgres_core = PostgresCore()
         self.debug_core = DebugCore()
-        self.vision_core = VisionCore()
         self.debug_core.verbose = 3
 
-        self.node = Node('long_running_function_node')
+        self.init_data_path(data_path)
 
-        self.bridge = CvBridge()
+        self.clear_old_videos()
+        self.video_context_switch_durtion = 20
+
+        self.frame_width = None
+        self.frame_height = None
+
+        self.camera_info = None
+        self.robot_position = None
         
-        self.image_sub = self.node.create_subscription(
-            Image, '/intel_realsense_r200_depth/image_raw', self.raw_image_callback, 10)
-        self.depth_sub = self.node.create_subscription(
-            Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_image_callback, 10)
-        self.camera_info_sub = self.node.create_subscription(
-            CameraInfo, '/intel_realsense_r200_depth/camera_info', self.camera_info_callback, 10)
+        if(ros_enable):
+            self.node = Node('long_running_function_node')
 
-        self.marker_pub = self.node.create_publisher(Marker, 'visualization_marker', 10)
+            self.bridge = CvBridge()
+            
+            self.image_sub = self.node.create_subscription(
+                Image, '/intel_realsense_r200_depth/image_raw', self.raw_image_callback, 10)
+            self.depth_sub = self.node.create_subscription(
+                Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_callback, 10)
+            self.camera_info_sub = self.node.create_subscription(
+                CameraInfo, '/intel_realsense_r200_depth/camera_info', self.camera_info_callback, 10)
 
-        self.tf_buffer = tf2_ros.Buffer()
-        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
+
+            self.marker_pub = self.node.create_publisher(Marker, 'visualization_marker', 10)
+
+            self.tf_buffer = tf2_ros.Buffer()
+            self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self.node)
+            
+            self.camera_intrinsics = None
+            self.depth_image = None
+
+        else:
+            self.cam = cv2.VideoCapture(1)
+
+            self.frame_width = int(self.cam.get(cv2.CAP_PROP_FRAME_WIDTH))
+            self.frame_height = int(self.cam.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        self.fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.fps = 20.0
+
+        self.saved_video_duration = 10
+        self.video_filename = ""
+
+        self.reference_video = None
+
+        self.start_time = int(time.time())
+        self.init_time = int(time.time())
+        self.elapsed_time = 0
+
+        self.frame_context_list = []
+
+        self.lock = threading.Lock()
+        self.is_llm_processing = False
+
+        self.current_depth_frame = None
+
+        self.temp_bounding_box = [0,0,0,0]
+
         
-        self.camera_intrinsics = None
-        self.depth_image = None
+    def init_data_path(self, _data_path):
+        self.VIDEOS_OUTPUT_PATH = os.path.join(_data_path, "videos")
+        self.IMAGES_OUTPUT_PATH = os.path.join(_data_path, "images")
 
-        
+        os.makedirs(self.VIDEOS_OUTPUT_PATH, exist_ok=True)
+        os.makedirs(self.IMAGES_OUTPUT_PATH, exist_ok=True)
+
     ########## ROS ##########
 
     def raw_image_callback(self, msg):
         current_frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        if(self.frame_width == None):
+            self.frame_height, self.frame_width, channels = current_frame.shape
 
-        self.vision_core.frame_height, self.vision_core.frame_width, channels = current_frame.shape
-
-        self.vision_core.video_saver(current_frame)
+        self.video_saver(current_frame)
 
         thread = threading.Thread(target=self.run_with_lock, args=(current_frame,))
         thread.start()
@@ -76,7 +124,7 @@ class MechVision:
     def camera_info_callback(self, msg):
         self.camera_intrinsics = np.array(msg.k).reshape((3, 3))
 
-    def depth_image_callback(self, msg):
+    def depth_callback(self, msg):
         self.depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
 
     def transform_to_map_frame(self, x, y, z):
@@ -359,11 +407,17 @@ class MechVision:
 def ros_main(args=None):
     rclpy.init(args=args)
 
-    vision_core = MechVision(True)
-    vision_core.spin()
-    vision_core.destroy_node()
+    long_running_function_node = VisionCore(True)
+    long_running_function_node.spin()
+    long_running_function_node.destroy_node()
 
     rclpy.shutdown()
   
 if __name__ == '__main__':
-    ros_main()
+    if(IS_ROS_ENABLE):
+        # Uncomment this to use it for ROS
+        ros_main()
+    else:
+        # Uncomment this to use it WITHOUT ROS, and use camera view
+        vision_core = VisionCore(False)
+        vision_core.run()

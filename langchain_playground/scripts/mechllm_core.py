@@ -44,7 +44,6 @@ class PoseData(BaseModel):
 class MechLLMCore:
     def __init__(self, data_path = "../output"):
         self.ollama_model = ChatOllama(
-            # base_url="http://192.168.1.182:11434",
             base_url="http://192.168.1.182:11434",
             model="llama3.2",
             temperature=0,
@@ -59,20 +58,11 @@ class MechLLMCore:
         self.debug_core.verbose = 3
 
         self.postgres_core = PostgresCore(False)
-        # self.postgres_core = None
-        self.init_data_path(data_path)
 
         tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
         # self.llm_with_tools = self.open_ai_model.bind_tools(tools)
         self.llm_with_tools = self.open_ai_model.bind_tools([self.move_base], tool_choice="any")
         # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
-    
-    def init_data_path(self, _data_path):
-        VIDEOS_OUTPUT_PATH = os.path.join(_data_path, "videos")
-        IMAGES_OUTPUT_PATH = os.path.join(_data_path, "images")
-
-        os.makedirs(VIDEOS_OUTPUT_PATH, exist_ok=True)
-        os.makedirs(IMAGES_OUTPUT_PATH, exist_ok=True)
 
     def chat(self):
         pass

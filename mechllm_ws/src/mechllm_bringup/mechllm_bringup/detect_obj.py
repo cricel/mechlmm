@@ -2,13 +2,16 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
 from visualization_msgs.msg import Marker
-from geometry_msgs.msg import Point, Pose, Quaternion
+from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
 import tf2_ros
 from tf_transformations import quaternion_from_euler
 import tf_transformations
+
+from rclpy.action import ActionClient
+from nav2_msgs.action import NavigateToPose
 
 class RedCubeDetector(Node):
     def __init__(self):
@@ -29,6 +32,10 @@ class RedCubeDetector(Node):
         
         self.camera_intrinsics = None
         self.depth_image = None
+
+
+        self._action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+
 
     def camera_info_callback(self, msg):
         self.camera_intrinsics = np.array(msg.k).reshape((3, 3))
@@ -133,6 +140,43 @@ class RedCubeDetector(Node):
         marker.color.a = 1.0
 
         self.marker_pub.publish(marker)
+
+
+
+
+    def send_goal(self, x, y, z):
+        goal_msg = NavigateToPose.Goal()
+        
+        goal_pose = PoseStamped()
+        goal_pose.header.frame_id = 'map'
+        goal_pose.header.stamp = self.get_clock().now().to_msg()
+        goal_pose.pose.position.x = x
+        goal_pose.pose.position.y = y
+        goal_pose.pose.position.z = z
+        goal_pose.pose.orientation.w = 1.0  # Adjust as needed for orientation
+        
+        goal_msg.pose = goal_pose
+
+        self._action_client.wait_for_server()
+        future = self._action_client.send_goal_async(goal_msg)
+        future.add_done_callback(self.goal_response_callback)
+
+    def goal_response_callback(self, future):
+        goal_handle = future.result()
+        if not goal_handle.accepted:
+            self.get_logger().info('Goal rejected')
+            return
+
+        self.get_logger().info('Goal accepted')
+        goal_handle.result().add_done_callback(self.get_result_callback)
+
+    def get_result_callback(self, future):
+        result = future.result()
+        if result.status == 4:  # SUCCEEDED
+            self.get_logger().info('Goal reached within 1cm!')
+        else:
+            self.get_logger().info('Goal failed with status: {0}'.format(result.status))
+
 
 def main(args=None):
     rclpy.init(args=args)

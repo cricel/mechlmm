@@ -20,10 +20,6 @@ def jpg_to_base64(image_path):
             return base64.b64encode(image_file.read()).decode("utf-8")
         
 def llm_output_json_cleaner(json_text):
-    # cleaned_json_text = json_text.replace("```json", "")
-    # cleaned_json_text = cleaned_json_text.replace("```", "")
-    # return cleaned_json_text
-
     start = json_text.find("{")
     end = json_text.rfind("}")
     if start != -1 and end != -1 and start < end:
@@ -98,6 +94,22 @@ def time_to_string(_time):
     timestamp = dt_object.strftime('%Y%m%d_%H%M%S')
 
     return timestamp
+
+def init_media_data_path(_data_path):
+    print(_data_path)
+    video_path = os.path.join(_data_path, "videos")
+    image_path = os.path.join(_data_path, "images")
+
+    os.makedirs(video_path, exist_ok=True)
+    os.makedirs(image_path, exist_ok=True)
+
+    return video_path, image_path
+
+def clear_media_storage(_data_path):
+    video_files = [f for f in os.listdir(os.path.join(_data_path, "videos")) if f.startswith('output_video_') and f.endswith('.mp4')]
+    for file in video_files:
+        os.remove(os.path.join(_data_path, "videos", file))
+        debug_core.log_info(f"Deleted old video file: {file}")
 
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")
