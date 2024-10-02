@@ -49,8 +49,25 @@ class MechVision:
         self.camera_intrinsics = None
         self.depth_image = None
 
-        
-    ########## ROS ##########
+        self.lock = threading.Lock()
+        self.processing_thread = threading.Thread(target=self.process_frames)
+        self.processing_thread.daemon = True
+        self.processing_thread.start()
+
+        self.lmm_result = None
+
+    def process_frames(self):
+        while True:
+            with self.lock:
+                if hasattr(self, 'latest_frame'):
+                    frame = self.latest_frame
+                else:
+                    frame = None
+
+            if frame is not None:
+                self.lmm_result = self.vision_core.frame_analyzer(frame)
+            
+            time.sleep(0.1)
 
     def raw_image_callback(self, msg):
         current_frame = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -58,6 +75,9 @@ class MechVision:
         self.vision_core.frame_height, self.vision_core.frame_width, channels = current_frame.shape
 
         self.vision_core.video_saver(current_frame)
+
+        with self.lock:
+                self.latest_frame = current_frame.copy()
 
         if(self.lmm_result):
             temp_bounding_box = self.lmm_result["objects"][0]["position"]
@@ -139,7 +159,7 @@ class MechVision:
     def destroy_node(self):
         self.node.destroy_node()
 
-def ros_main(args=None):
+def main(args=None):
     rclpy.init(args=args)
 
     mech_vision = MechVision(True)
@@ -149,4 +169,4 @@ def ros_main(args=None):
     rclpy.shutdown()
   
 if __name__ == '__main__':
-    ros_main()
+    main()

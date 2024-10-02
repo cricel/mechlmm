@@ -50,10 +50,10 @@
       </include>
     </model>
 
-    <model name="cube">
+    <model name="cube0">
       <static>true</static>
-      <pose>0.7 -0.5 0.15 0 0 0</pose>
-      <link name="link">
+      <pose>-1.0 2.5 0.15 0 0 0</pose>
+      <link name="cube0_link">
         <collision name="collision">
           <geometry>
             <box>
@@ -70,6 +70,56 @@
           <material>
             <ambient>1 0 0 1</ambient> <!-- Red color in RGBA format -->
             <diffuse>1 0 0 1</diffuse> <!-- Red color in RGBA format -->
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube1">
+      <static>true</static>
+      <pose>-1.0 4.5 0.15 0 0 0</pose>
+      <link name="cube1_link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 1 0 1</ambient> <!-- Red color in RGBA format -->
+            <diffuse>0 1 0 1</diffuse> <!-- Red color in RGBA format -->
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="cube2">
+      <static>true</static>
+      <pose>-5.0 3.5 0.15 0 0 0</pose>
+      <link name="cube2_link">
+        <collision name="collision">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <box>
+              <size>0.3 0.3 0.3</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0 0 1 1</ambient> <!-- Red color in RGBA format -->
+            <diffuse>0 0 1 1</diffuse> <!-- Red color in RGBA format -->
           </material>
         </visual>
       </link>
