@@ -18,8 +18,8 @@ class RedCubeDetector(Node):
         super().__init__('red_cube_detector')
         
         self.bridge = CvBridge()
-        self.image_sub = self.create_subscription(
-            Image, '/intel_realsense_r200_depth/image_raw', self.image_callback, 10)
+        # self.image_sub = self.create_subscription(
+        #     Image, '/intel_realsense_r200_depth/image_raw', self.image_callback, 10)
         self.depth_sub = self.create_subscription(
             Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_callback, 10)
         self.camera_info_sub = self.create_subscription(
@@ -36,6 +36,37 @@ class RedCubeDetector(Node):
 
         self._action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
 
+        self.fake_db = [
+            {
+                "name": "red_cube",
+                "position":{
+                    "x": 1.0251095463144564,
+                    "y": 2.9080866714360214,
+                    "z": 0.06520555188409224
+                }
+            }
+        ]
+
+        # print(self.fake_db[0]["position"])
+
+        print("--")
+        self.send_goal(self.fake_db[0]["position"]["x"], self.fake_db[0]["position"]["y"], self.fake_db[0]["position"]["z"])
+        print("-1-")
+
+    def detect_color(self, hsv_frame, lower_bound, upper_bound):
+        mask = cv2.inRange(hsv_frame, lower_bound, upper_bound)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        return contours
+
+    # Function to draw bounding boxes around the detected colors
+    def draw_bounding_boxes(self, frame, contours, color_name, box_color):
+        for contour in contours:
+            if cv2.contourArea(contour) > 500:  # Filter out small contours
+                x, y, w, h = cv2.boundingRect(contour)
+                cv2.rectangle(frame, (x, y), (x+w, y+h), box_color, 2)
+                cv2.putText(frame, color_name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, box_color, 2)
+
 
     def camera_info_callback(self, msg):
         self.camera_intrinsics = np.array(msg.k).reshape((3, 3))
@@ -48,13 +79,32 @@ class RedCubeDetector(Node):
         upper_red = np.array([10, 255, 255])
         mask = cv2.inRange(hsv_image, lower_red, upper_red)
 
+        red_lower = np.array([0, 120, 70])
+        red_upper = np.array([10, 255, 255])
+        red_contours = self.detect_color(hsv_image, red_lower, red_upper)
+        
+        # Detect green color
+        green_lower = np.array([36, 50, 70])
+        green_upper = np.array([89, 255, 255])
+        green_contours = self.detect_color(hsv_image, green_lower, green_upper)
+        
+        # Detect blue color
+        blue_lower = np.array([90, 50, 70])
+        blue_upper = np.array([128, 255, 255])
+        blue_contours = self.detect_color(hsv_image, blue_lower, blue_upper)
+
+        self.draw_bounding_boxes(color_image, red_contours, "Red", (0, 0, 255))  # Red box for red color
+        self.draw_bounding_boxes(color_image, green_contours, "Green", (0, 255, 0))  # Green box for green color
+        self.draw_bounding_boxes(color_image, blue_contours, "Blue", (255, 0, 0))  # Blue box for blue color
+
+
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         if contours:
             largest_contour = max(contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(largest_contour)
 
-            cv2.rectangle(color_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # cv2.rectangle(color_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
             center_x, center_y = x + w // 2, y + h // 2
 
@@ -145,6 +195,7 @@ class RedCubeDetector(Node):
 
 
     def send_goal(self, x, y, z):
+        print("-2-")
         goal_msg = NavigateToPose.Goal()
         
         goal_pose = PoseStamped()
@@ -168,7 +219,8 @@ class RedCubeDetector(Node):
             return
 
         self.get_logger().info('Goal accepted')
-        goal_handle.result().add_done_callback(self.get_result_callback)
+        self._get_result_future = goal_handle.get_result_async()
+        self._get_result_future.add_done_callback(self.get_result_callback)
 
     def get_result_callback(self, future):
         result = future.result()
