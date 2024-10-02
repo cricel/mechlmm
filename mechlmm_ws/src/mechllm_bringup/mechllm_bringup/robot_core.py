@@ -3,6 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image, CameraInfo
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point, Pose, Quaternion, PoseStamped
+from std_msgs.msg import String
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
@@ -13,17 +14,26 @@ import tf_transformations
 from rclpy.action import ActionClient
 from nav2_msgs.action import NavigateToPose
 
+from mechlmm_py import MechLMMCore, DebugCore, lmm_function_pool
+
 class RedCubeDetector(Node):
     def __init__(self):
         super().__init__('red_cube_detector')
-        
+        self.mechlmm_core = MechLMMCore()
+        self.debug_core = DebugCore()
+
         self.bridge = CvBridge()
-        # self.image_sub = self.create_subscription(
-        #     Image, '/intel_realsense_r200_depth/image_raw', self.image_callback, 10)
+        self.image_sub = self.create_subscription(
+            Image, '/intel_realsense_r200_depth/image_raw', self.image_callback, 10)
         self.depth_sub = self.create_subscription(
             Image, '/intel_realsense_r200_depth/depth/image_raw', self.depth_callback, 10)
         self.camera_info_sub = self.create_subscription(
             CameraInfo, '/intel_realsense_r200_depth/camera_info', self.camera_info_callback, 10)
+
+        self.operator_cmd_sub = self.create_subscription(
+            String, 'operator_cmd', self.operator_cmd_callback, 10)
+        
+        self.timer = self.create_timer(0.5, self.timer_callback)
 
         self.marker_pub = self.create_publisher(Marker, 'visualization_marker', 10)
 
@@ -34,24 +44,80 @@ class RedCubeDetector(Node):
         self.depth_image = None
 
 
-        self._action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.nav_action_client = ActionClient(self, NavigateToPose, 'navigate_to_pose')
+        self.nav_goal_handle = None
 
-        self.fake_db = [
-            {
-                "name": "red_cube",
+        self.fake_db = {
+            "red_cube": {
                 "position":{
                     "x": 1.0251095463144564,
                     "y": 2.9080866714360214,
                     "z": 0.06520555188409224
                 }
+            },
+            "home": {
+                "position":{
+                    "x": -3.0,
+                    "y": 1.0,
+                    "z": 0.0
+                }
             }
-        ]
+        }
 
-        # print(self.fake_db[0]["position"])
+        self.fake_db_items = list(self.fake_db.keys())
 
-        print("--")
-        self.send_goal(self.fake_db[0]["position"]["x"], self.fake_db[0]["position"]["y"], self.fake_db[0]["position"]["z"])
-        print("-1-")
+
+        self.llm_tools = [lmm_function_pool.navigation, lmm_function_pool.manipulation]
+
+        # self.send_goal(self.fake_db[0]["position"]["x"], self.fake_db[0]["position"]["y"], self.fake_db[0]["position"]["z"])
+
+    def timer_callback(self):
+        # self.debug_core.log_info(self.nav_goal_handle)
+        pass
+        
+    def operator_cmd_callback(self, msg):
+        results = self.mechlmm_core.chat_tool(
+            self.llm_tools, 
+            f"""
+                {msg.data}
+            """
+            )
+
+        self.debug_core.log_info(results)
+
+        if(results.tool_calls):
+            tool_call = results.tool_calls[0]
+            selected_tool = {
+                    "navigation": self.navigation,
+                    "manipulation": self.manipulation
+                }[tool_call["name"].lower()]
+
+            selected_tool(tool_call["args"])
+
+        elif(results.content):
+            self.debug_core.log_key(results.content)
+
+
+    def navigation(self, target_name):
+        results, _ = self.mechlmm_core.chat_text(f"""
+            find the list of similar items in the list provided: 
+            {target_name}
+
+            {self.fake_db_items}
+
+            return the exact name of the matching item, if none found, return None
+            Only return the name itself, no need for the reasoning or any additional content.       
+            """
+        )
+        
+        self.debug_core.log_info("------ find target object in db ------")
+        self.debug_core.log_info(results)
+
+        self.send_goal(self.fake_db[results]["position"]["x"], self.fake_db[results]["position"]["y"], self.fake_db[results]["position"]["z"])
+
+    def manipulation(self, target_name):
+        print(target_name)
+        print("I am manipulating")
 
     def detect_color(self, hsv_frame, lower_bound, upper_bound):
         mask = cv2.inRange(hsv_frame, lower_bound, upper_bound)
@@ -59,10 +125,9 @@ class RedCubeDetector(Node):
         
         return contours
 
-    # Function to draw bounding boxes around the detected colors
     def draw_bounding_boxes(self, frame, contours, color_name, box_color):
         for contour in contours:
-            if cv2.contourArea(contour) > 500:  # Filter out small contours
+            if cv2.contourArea(contour) > 500:
                 x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(frame, (x, y), (x+w, y+h), box_color, 2)
                 cv2.putText(frame, color_name, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, box_color, 2)
@@ -74,6 +139,12 @@ class RedCubeDetector(Node):
     def image_callback(self, msg):
         color_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         
+        # self.object_tracking(color_image)
+        
+        cv2.imshow("Detection", color_image)
+        cv2.waitKey(1)
+
+    def object_tracking(self, color_image):
         hsv_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
         lower_red = np.array([0, 120, 70])
         upper_red = np.array([10, 255, 255])
@@ -83,19 +154,17 @@ class RedCubeDetector(Node):
         red_upper = np.array([10, 255, 255])
         red_contours = self.detect_color(hsv_image, red_lower, red_upper)
         
-        # Detect green color
         green_lower = np.array([36, 50, 70])
         green_upper = np.array([89, 255, 255])
         green_contours = self.detect_color(hsv_image, green_lower, green_upper)
         
-        # Detect blue color
         blue_lower = np.array([90, 50, 70])
         blue_upper = np.array([128, 255, 255])
         blue_contours = self.detect_color(hsv_image, blue_lower, blue_upper)
 
-        self.draw_bounding_boxes(color_image, red_contours, "Red", (0, 0, 255))  # Red box for red color
-        self.draw_bounding_boxes(color_image, green_contours, "Green", (0, 255, 0))  # Green box for green color
-        self.draw_bounding_boxes(color_image, blue_contours, "Blue", (255, 0, 0))  # Blue box for blue color
+        self.draw_bounding_boxes(color_image, red_contours, "Red", (0, 0, 255))
+        self.draw_bounding_boxes(color_image, green_contours, "Green", (0, 255, 0))
+        self.draw_bounding_boxes(color_image, blue_contours, "Blue", (255, 0, 0))
 
 
         contours, _ = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -127,8 +196,6 @@ class RedCubeDetector(Node):
 
                     self.transform_to_map_frame(x_3d, y_3d, z)
 
-        cv2.imshow("Red Cube Detection", color_image)
-        cv2.waitKey(1)
 
     def depth_callback(self, msg):
         self.depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
@@ -192,10 +259,7 @@ class RedCubeDetector(Node):
         self.marker_pub.publish(marker)
 
 
-
-
     def send_goal(self, x, y, z):
-        print("-2-")
         goal_msg = NavigateToPose.Goal()
         
         goal_pose = PoseStamped()
@@ -204,22 +268,23 @@ class RedCubeDetector(Node):
         goal_pose.pose.position.x = x
         goal_pose.pose.position.y = y
         goal_pose.pose.position.z = z
-        goal_pose.pose.orientation.w = 1.0  # Adjust as needed for orientation
+        goal_pose.pose.orientation.w = 1.0
         
         goal_msg.pose = goal_pose
 
-        self._action_client.wait_for_server()
-        future = self._action_client.send_goal_async(goal_msg)
+        self.nav_action_client.wait_for_server()
+        future = self.nav_action_client.send_goal_async(goal_msg)
         future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
+        self.nav_goal_handle = future.result()
+        if not self.nav_goal_handle.accepted:
             self.get_logger().info('Goal rejected')
             return
 
         self.get_logger().info('Goal accepted')
-        self._get_result_future = goal_handle.get_result_async()
+
+        self._get_result_future = self.nav_goal_handle.get_result_async()
         self._get_result_future.add_done_callback(self.get_result_callback)
 
     def get_result_callback(self, future):
@@ -228,7 +293,7 @@ class RedCubeDetector(Node):
             self.get_logger().info('Goal reached within 1cm!')
         else:
             self.get_logger().info('Goal failed with status: {0}'.format(result.status))
-
+        
 
 def main(args=None):
     rclpy.init(args=args)

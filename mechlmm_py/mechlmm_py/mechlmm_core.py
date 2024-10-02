@@ -1,9 +1,5 @@
 from langchain_community.callbacks import get_openai_callback
-from langchain_core.messages import HumanMessage, ToolMessage
-from langchain_core.tools import tool
-
-from pydantic import BaseModel
-from langchain.tools import StructuredTool
+from langchain_core.messages import HumanMessage
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
@@ -12,26 +8,8 @@ import cv2
 
 from .debug_core import DebugCore
 from .postgres_core import PostgresCore
+from . import lmm_function_pool
 from . import utilities_core
-
-# from geometry_msgs.msg import Pose
-
-# Define the Position class
-class Position(BaseModel):
-    x: float
-    y: float
-    z: float
-
-# Define the Orientation class
-class Orientation(BaseModel):
-    x: float
-    y: float
-    z: float
-    w: float
-
-class PoseData(BaseModel):
-    position: Position
-    orientation: Orientation
 
 class MechLMMCore:
     def __init__(self, data_path = "../output"):
@@ -51,10 +29,10 @@ class MechLMMCore:
 
         self.postgres_core = PostgresCore(False)
 
-        tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
-        # self.llm_with_tools = self.open_ai_model.bind_tools(tools)
-        self.llm_with_tools = self.open_ai_model.bind_tools([self.move_base], tool_choice="any")
-        # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
+        # tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
+        # # self.llm_with_tools = self.open_ai_model.bind_tools(tools)
+        # self.llm_with_tools = self.open_ai_model.bind_tools([self.move_base], tool_choice="any")
+        # # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
 
     def chat(self):
         pass
@@ -302,75 +280,13 @@ class MechLMMCore:
         return video_summary
     
 
-    def chat_tool(self, _question):
+    def chat_tool(self, _tools, _question):
         self.debug_core.log_info("------ llm tool calling ------")
+
+        self.llm_with_tools = self.open_ai_model.bind_tools(_tools)
         _result = self.llm_with_tools.invoke(_question)
-        print(_result.tool_calls)
-        self.debug_core.log_info("------ ------")
-
+        
         return _result
-
-
-    @tool
-    def add(a: int, b: int) -> int:
-        """Adds a and b.
-
-        Args:
-            a: first int
-            b: second int
-        """
-        return a + b
-
-
-    @tool
-    def multiply(a: int, b: int) -> int:
-        """Multiplies a and b.
-
-        Args:
-            a: first int
-            b: second int
-        """
-        return a * b
-    
-    # @tool
-    # def move_base(target_location: Pose) -> bool:
-    #     """move the robot to the target location
-
-    #     Args:
-    #         target_location: the target location robot is gonna move to
-    #     """
-
-    #     return True
-    
-    @tool
-    def move_arm_end_effector(target_location: str) -> bool:
-        """move the arm of robot to the target location
-
-        Args:
-            target_location: the target location arm is gonna reach to
-        """
-
-        return True
-    
-    @tool
-    def move_base(target_direction: str) -> bool:
-        """move the robot to the target direction for 1cm
-
-        Args:
-            target_location: the target direction robot is gonna move to, it only have four type of value "forward", "left", "right", "back", "stop"
-        """
-        
-        print("move_base....")
-        return True
-
-    @tool
-    def arrived_stop() -> bool:
-        """ stop the robot as it arrived its target position
-
-        """
-        
-        print("arrived_stop....")
-        return True
     
 
 def move_base(target_direction: str):
@@ -525,29 +441,29 @@ if __name__ == '__main__':
     #                             how are you"
     #                             """))
     
-    json_schema = {
-        "title": "story",
-        "description": "give me a break down of story",
-        "type": "object",
-        "properties": {
-            "names": {
-                "type": "array",
-                "items": {
-                    "type": "string"
-                },
-                "description": "list of name that shows up in the story",
-            },
-            "locations": {
-                "type": "string",
-                "description": "list of locations that shows up in the story"
-            }
-        },
-        "required": ["names", "locations"]
-    }
+    # json_schema = {
+    #     "title": "story",
+    #     "description": "give me a break down of story",
+    #     "type": "object",
+    #     "properties": {
+    #         "names": {
+    #             "type": "array",
+    #             "items": {
+    #                 "type": "string"
+    #             },
+    #             "description": "list of name that shows up in the story",
+    #         },
+    #         "locations": {
+    #             "type": "string",
+    #             "description": "list of locations that shows up in the story"
+    #         }
+    #     },
+    #     "required": ["names", "locations"]
+    # }
     
-    print(mechlmm_core.chat_text("""
-                                write me a short story with names and location"
-                                """, json_schema))
+    # print(mechlmm_core.chat_text("""
+    #                             write me a short story with names and location"
+    #                             """, json_schema))
     
     # db_objects = ["wall","person", "background", "phone", "cloth"]
 
