@@ -28,6 +28,7 @@ setup(
             'arm_control = mechllm_bringup.arm_control:main',
             'robot_core = mechllm_bringup.robot_core:main',
             'operator_cmd = mechllm_bringup.operator_cmd:main',
+            'arm_cmd = mechllm_bringup.arm_cmd:main',
         ],
     },
 )
