@@ -184,6 +184,11 @@ class RedCubeDetector(Node):
         cv2.imshow("Detection", color_image)
         cv2.waitKey(1)
 
+
+
+    # TODO: Combine the source data of the object and robot end effector, and human input for weight to make decision
+    # data calcuate the action (left, right), human intention,( left, right)
+    # static data, AI feedback, human input
     def action_break(self, frame):
         base64_image = utilities_core.opencv_frame_to_base64(frame)
         image_url = f"data:image/jpeg;base64,{base64_image}"
