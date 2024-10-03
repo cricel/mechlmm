@@ -14,6 +14,10 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
     ],
+    py_modules=[
+        'mechllm_bringup.function_pool_definition',
+        'mechllm_bringup.function_pool_lmm_declaration',
+    ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='atom',

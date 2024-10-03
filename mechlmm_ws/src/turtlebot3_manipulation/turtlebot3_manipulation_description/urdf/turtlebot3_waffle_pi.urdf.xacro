@@ -197,7 +197,7 @@ https://github.com/ROBOTIS-GIT/turtlebot3/blob/kinetic-devel/turtlebot3_descript
   <joint name="${prefix}camera_joint" type="fixed">
     <parent link="${prefix}base_link"/>
     <child link="${prefix}camera_link"/>
-    <origin xyz="-0.4 -0.011 1" rpy="0 0.8 0"/>
+    <origin xyz="-0.3 0.3 0.6" rpy="0 0.6 -0.3"/>
   </joint>
 
   <link name="${prefix}camera_link">

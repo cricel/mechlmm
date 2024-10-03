@@ -280,12 +280,42 @@ class MechLMMCore:
         return video_summary
     
 
-    def chat_tool(self, _tools, _question):
+    def chat_tool(self, _tools, _question, _base_img = None):
         self.debug_core.log_info("------ llm tool calling ------")
+        
+        query = None
+        if(_base_img):
+            query = [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "text", 
+                            "text": _question
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": _base_img}
+                        },
+                    ]
+                )
+            ]
+        else:
+            query = [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "text", 
+                            "text": _question
+                        }
+                    ]
+                )
+            ]
 
         self.llm_with_tools = self.open_ai_model.bind_tools(_tools)
-        _result = self.llm_with_tools.invoke(_question)
+        _result = self.llm_with_tools.invoke(query)
         
+        self.debug_core.log_info(_result)
+
         return _result
     
 

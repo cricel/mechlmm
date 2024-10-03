@@ -52,24 +52,24 @@
 
     <model name="cube2">
       <static>true</static>
-      <pose>-0.0 0.5 0.15 0 0 0</pose>
+      <pose>-0.0 0.5 0.25 0 0 0</pose>
       <link name="cube2_link">
         <collision name="collision">
           <geometry>
             <box>
-              <size>0.3 0.3 0.3</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
         </collision>
         <visual name="visual">
           <geometry>
             <box>
-              <size>0.3 0.3 0.3</size>
+              <size>0.03 0.03 0.03</size>
             </box>
           </geometry>
           <material>
-            <ambient>1 0 0 1</ambient> <!-- Red color in RGBA format -->
-            <diffuse>1 0 0 1</diffuse> <!-- Red color in RGBA format -->
+            <ambient>0 0 1 1</ambient> <!-- Red color in RGBA format -->
+            <diffuse>0 0 1 1</diffuse> <!-- Red color in RGBA format -->
           </material>
         </visual>
       </link>

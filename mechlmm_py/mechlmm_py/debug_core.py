@@ -28,6 +28,10 @@ class DebugCore:
         if(self.verbose >= 0):
             print(colored(_msg, 'blue'))
 
+    def log_flash(self, _msg):
+        if(self.verbose >= 0):
+            print(colored(f"\033[5m{_msg}\033[0m", 'red'))
+
 if __name__ == '__main__':
     debug_core = DebugCore()
     debug_core.verbose = 0

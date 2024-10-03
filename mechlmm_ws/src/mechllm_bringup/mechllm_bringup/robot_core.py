@@ -14,7 +14,11 @@ import tf_transformations
 from rclpy.action import ActionClient
 from nav2_msgs.action import NavigateToPose
 
-from mechlmm_py import MechLMMCore, DebugCore, lmm_function_pool
+from mechlmm_py import MechLMMCore, DebugCore, utilities_core
+import mechlmm_py
+
+import mechllm_bringup.function_pool_lmm_declaration as function_pool_lmm_declaration
+from mechllm_bringup.function_pool_definition import FunctionPoolDefinition
 
 class RedCubeDetector(Node):
     def __init__(self):
@@ -22,7 +26,12 @@ class RedCubeDetector(Node):
         self.mechlmm_core = MechLMMCore()
         self.debug_core = DebugCore()
 
+        self.function_pool_definition = FunctionPoolDefinition()
+
         self.bridge = CvBridge()
+        self.head_view_sub = self.create_subscription(
+            Image, '/pi_camera/image_raw', self.head_view_callback, 10)
+        
         self.image_sub = self.create_subscription(
             Image, '/intel_realsense_r200_depth/image_raw', self.image_callback, 10)
         self.depth_sub = self.create_subscription(
@@ -50,9 +59,9 @@ class RedCubeDetector(Node):
         self.fake_db = {
             "red_cube": {
                 "position":{
-                    "x": 1.0251095463144564,
-                    "y": 2.9080866714360214,
-                    "z": 0.06520555188409224
+                    "x": 1.97,
+                    "y": 1.04,
+                    "z": 0.0
                 }
             },
             "home": {
@@ -67,35 +76,53 @@ class RedCubeDetector(Node):
         self.fake_db_items = list(self.fake_db.keys())
 
 
-        self.llm_tools = [lmm_function_pool.navigation, lmm_function_pool.manipulation]
+        self.llm_tools = [function_pool_lmm_declaration.arm_end_effector_control,
+                          function_pool_lmm_declaration.arm_end_effector_rotation_control,
+                          function_pool_lmm_declaration.manipulation,
+                          function_pool_lmm_declaration.move_robot,
+                          function_pool_lmm_declaration.navigation,
+                          function_pool_lmm_declaration.trigger_gripper
+                        ]
+
+        self.llm_tools_map = {
+            "arm_end_effector_control": self.function_pool_definition.arm_end_effector_control,
+            "arm_end_effector_rotation_control": self.function_pool_definition.arm_end_effector_rotation_control,
+            "manipulation": self.function_pool_definition.manipulation,
+            "move_robot": self.function_pool_definition.move_robot,
+            "navigation": self.function_pool_definition.navigation,
+            "trigger_gripper": self.function_pool_definition.trigger_gripper,
+        }
 
         # self.send_goal(self.fake_db[0]["position"]["x"], self.fake_db[0]["position"]["y"], self.fake_db[0]["position"]["z"])
+        self.llm_action = False
 
     def timer_callback(self):
         # self.debug_core.log_info(self.nav_goal_handle)
         pass
         
     def operator_cmd_callback(self, msg):
-        results = self.mechlmm_core.chat_tool(
-            self.llm_tools, 
-            f"""
-                {msg.data}
-            """
-            )
+        self.llm_action = True
 
-        self.debug_core.log_info(results)
+        # results = self.mechlmm_core.chat_tool(
+        #     self.llm_tools, 
+        #     f"""
+        #         {msg.data}
+        #     """
+        #     )
 
-        if(results.tool_calls):
-            tool_call = results.tool_calls[0]
-            selected_tool = {
-                    "navigation": self.navigation,
-                    "manipulation": self.manipulation
-                }[tool_call["name"].lower()]
+        # self.debug_core.log_info(results)
 
-            selected_tool(tool_call["args"])
+        # if(results.tool_calls):
+        #     tool_call = results.tool_calls[0]
+        #     selected_tool = {
+        #             "navigation": self.navigation,
+        #             "manipulation": self.manipulation
+        #         }[tool_call["name"].lower()]
 
-        elif(results.content):
-            self.debug_core.log_key(results.content)
+        #     selected_tool(tool_call["args"])
+
+        # elif(results.content):
+        #     self.debug_core.log_key(results.content)
 
 
     def navigation(self, target_name):
@@ -136,6 +163,19 @@ class RedCubeDetector(Node):
     def camera_info_callback(self, msg):
         self.camera_intrinsics = np.array(msg.k).reshape((3, 3))
 
+    def head_view_callback(self, msg):
+        # print("-=-")
+        color_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+        
+        # self.object_tracking(color_image)
+
+        if(self.llm_action):
+            self.llm_action = False
+            self.action_break(color_image)
+        
+        cv2.imshow("Detection", color_image)
+        cv2.waitKey(1)
+
     def image_callback(self, msg):
         color_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
         
@@ -144,6 +184,41 @@ class RedCubeDetector(Node):
         cv2.imshow("Detection", color_image)
         cv2.waitKey(1)
 
+    def action_break(self, frame):
+        base64_image = utilities_core.opencv_frame_to_base64(frame)
+        image_url = f"data:image/jpeg;base64,{base64_image}"
+        results = self.mechlmm_core.chat_tool(
+            self.llm_tools,
+            # f"""
+            #     the red cube between the arm gripper is the center point of robot arm, it act as the reference point for any action robot is doing
+
+            #     base on the position of blue cube, what should be the action need to do in order for robot arm to grab the blue cube
+
+            #     use the tool function call provided
+            #     if no action needed, then explain why
+            # """,
+            """
+                the red cube between the arm gripper is the center point of robot arm, it act as the reference point for any action robot is doing
+                what is the position of blue cube in terms of the red cube? (left, right, up, down)?
+
+                base on the position of blue cube, what should be the action need to do in order for robot arm to grab the blue cube
+                use the tool function call provided
+                if no action needed, then explain why
+            """,
+            image_url
+        )
+
+        self.debug_core.log_info(results)
+
+        if(results.tool_calls):
+            tool_call = results.tool_calls[0]
+            selected_tool = self.llm_tools_map[tool_call["name"].lower()]
+
+            selected_tool(tool_call["args"])
+
+        elif(results.content):
+            self.debug_core.log_key(results.content)
+        
     def object_tracking(self, color_image):
         hsv_image = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
         lower_red = np.array([0, 120, 70])
