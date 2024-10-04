@@ -1,14 +1,13 @@
-from langchain_community.callbacks import get_openai_callback
 from langchain_core.messages import HumanMessage
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 import cv2
 
 from .debug_core import DebugCore
 from .postgres_core import PostgresCore
-from . import lmm_function_pool
 from . import utilities_core
 
 class MechLMMCore:
@@ -19,9 +18,17 @@ class MechLMMCore:
             temperature=0,
         )
 
-        self.open_ai_model = ChatOpenAI(
+        self.openai_model = ChatOpenAI(
             model="gpt-4o-mini",
             temperature=0,
+        )
+
+        self.gemini_model = ChatGoogleGenerativeAI(
+            model="gemini-1.5-pro",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
         )
         
         self.debug_core = DebugCore()
@@ -30,8 +37,8 @@ class MechLMMCore:
         self.postgres_core = PostgresCore(False)
 
         # tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
-        # # self.llm_with_tools = self.open_ai_model.bind_tools(tools)
-        # self.llm_with_tools = self.open_ai_model.bind_tools([self.move_base], tool_choice="any")
+        # # self.llm_with_tools = self.openai_model.bind_tools(tools)
+        # self.llm_with_tools = self.openai_model.bind_tools([self.move_base], tool_choice="any")
         # # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
 
     def chat(self):
@@ -150,9 +157,9 @@ class MechLMMCore:
         text_llm = None
 
         if(_json_schema):
-            text_llm = self.open_ai_model.with_structured_output(_json_schema)
+            text_llm = self.gemini_model.with_structured_output(_json_schema)
         else:
-            text_llm = self.open_ai_model
+            text_llm = self.gemini_model
 
         result = text_llm.invoke(
             [
@@ -167,6 +174,8 @@ class MechLMMCore:
             ]
         )
 
+        # result = text_llm.invoke(_question)
+
         self.debug_core.log_info("------ chat_text output ------")
         self.debug_core.log_info(result)
 
@@ -179,9 +188,9 @@ class MechLMMCore:
         text_llm = None
 
         if(_json_schema):
-            text_llm = self.open_ai_model.with_structured_output(_json_schema)
+            text_llm = self.gemini_model.with_structured_output(_json_schema)
         else:
-            text_llm = self.open_ai_model
+            text_llm = self.gemini_model
 
         result = text_llm.invoke(
             [
@@ -311,7 +320,7 @@ class MechLMMCore:
                 )
             ]
 
-        self.llm_with_tools = self.open_ai_model.bind_tools(_tools)
+        self.llm_with_tools = self.gemini_model.bind_tools(_tools)
         _result = self.llm_with_tools.invoke(query)
         
         self.debug_core.log_info(_result)
@@ -324,6 +333,11 @@ def move_base(target_direction: str):
 
 if __name__ == '__main__':
     mechlmm_core = MechLMMCore()
+
+    ## Chat Text Test ##
+    print(mechlmm_core.chat_text("""
+                                write me a short story with names and location"
+                                """))
 
     # current_pose = PoseData()
     # target_pose = PoseData()

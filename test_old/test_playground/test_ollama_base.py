@@ -2,7 +2,7 @@ from ollama import Client
 client = Client(host='http://131.123.41.132:11434')
 
 print ("------ Text LLM ------")
-res = client.chat(model='llama3', messages=[
+res = client.chat(model='llava:34b', messages=[
   {
     'role': 'user',
     'content': 'Hi',
@@ -12,12 +12,12 @@ print(res['message']['content'])
 
 print ("------ Image LLM ------")
 res = client.chat(
-	model="llava:34b",
+	model="llava",
 	messages=[
 		{
 			'role': 'user',
-			'content': 'give me a one sentence description of what happen in this image:',
-			'images': ['./messy_room.jpg']
+			'content': 'what is the pixel position of the trash can in the image, give me the bounding box of the object',
+			'images': ['./test.jpg']
 		}
 	]
 )

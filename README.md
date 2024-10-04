@@ -19,6 +19,8 @@ dotenv -f .env run -- bash
 
 from dotenv import load_dotenv
 load_dotenv()
+
+sudo chown -R $USER ~/.config/gcloud
 ```
 
 ## Postgresql
