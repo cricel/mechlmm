@@ -1,4 +1,5 @@
 from langchain_core.messages import HumanMessage
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
@@ -36,10 +37,7 @@ class MechLMMCore:
 
         self.postgres_core = PostgresCore(False)
 
-        # tools = [self.add, self.multiply, self.move_base, self.move_arm_end_effector]
-        # # self.llm_with_tools = self.openai_model.bind_tools(tools)
-        # self.llm_with_tools = self.openai_model.bind_tools([self.move_base], tool_choice="any")
-        # # always_multiply_llm = llm.bind_tools([multiply], tool_choice="multiply")
+        self.mechlmm_model = self.gemini_model
 
     def chat(self):
         pass
@@ -137,8 +135,6 @@ class MechLMMCore:
 
         return results
 
-
-    
     def find_video_in_range(self, video_data, time_data):
         matching_video_list = []
         start_time, end_time = time_data
@@ -152,16 +148,17 @@ class MechLMMCore:
         
         return matching_video_list
         
+    def chat_text(self, _question, _schema = None, _tag = None):
+        self.debug_core.log_info("------ chat_text output ------")
 
-    def chat_text(self, _question, _json_schema = None, _tag = None):
-        text_llm = None
+        img_llm = None
 
-        if(_json_schema):
-            text_llm = self.gemini_model.with_structured_output(_json_schema)
+        if(_schema):
+            img_llm = self.mechlmm_model.with_structured_output(_schema)
         else:
-            text_llm = self.gemini_model
+            img_llm = self.mechlmm_model
 
-        result = text_llm.invoke(
+        result = img_llm.invoke(
             [
                 HumanMessage(
                     content=[
@@ -174,25 +171,24 @@ class MechLMMCore:
             ]
         )
 
-        # result = text_llm.invoke(_question)
-
-        self.debug_core.log_info("------ chat_text output ------")
         self.debug_core.log_info(result)
 
-        if(_json_schema):
+        if(_schema):
             return result, _tag
         else:
             return result.content, _tag
 
-    def chat_img(self, _question, _base_img, _json_schema = None, _tag = None):
-        text_llm = None
+    def chat_img(self, _question, _base_img, _schema = None, _tag = None):
+        self.debug_core.log_info("------ chat_img output ------")
 
-        if(_json_schema):
-            text_llm = self.gemini_model.with_structured_output(_json_schema)
+        img_llm = None
+
+        if(_schema):
+            img_llm = self.mechlmm_model.with_structured_output(_schema)
         else:
-            text_llm = self.gemini_model
+            img_llm = self.mechlmm_model
 
-        result = text_llm.invoke(
+        result = img_llm.invoke(
             [
                 HumanMessage(
                     content=[
@@ -202,14 +198,14 @@ class MechLMMCore:
                         },
                         {
                             "type": "image_url",
-                            "image_url": {"url": _base_img}
+                            # "image_url": {"url": _base_img}
+                            "image_url": _base_img
                         },
                     ]
                 )
             ]
         )
 
-        self.debug_core.log_info("------ chat_img output ------")
         self.debug_core.log_info(result)
 
         return result, _tag
@@ -288,8 +284,7 @@ class MechLMMCore:
 
         return video_summary
     
-
-    def chat_tool(self, _tools, _question, _base_img = None):
+    def chat_tool(self, _tools, _question, _base_img = None, _schema = None, _tag = None):
         self.debug_core.log_info("------ llm tool calling ------")
         
         query = None
@@ -303,7 +298,8 @@ class MechLMMCore:
                         },
                         {
                             "type": "image_url",
-                            "image_url": {"url": _base_img}
+                            # "image_url": {"url": _base_img}
+                            "image_url": _base_img
                         },
                     ]
                 )
@@ -320,226 +316,15 @@ class MechLMMCore:
                 )
             ]
 
-        self.llm_with_tools = self.gemini_model.bind_tools(_tools)
+        self.llm_with_tools = self.mechlmm_model.bind_tools(_tools)
         _result = self.llm_with_tools.invoke(query)
         
         self.debug_core.log_info(_result)
 
-        return _result
-    
+        return _result, _tag
 
-def move_base(target_direction: str):
-    print(target_direction)
+    def basemodel_to_json(self, _basemodel):
+        return convert_to_openai_function(_basemodel)
 
 if __name__ == '__main__':
-    mechlmm_core = MechLMMCore()
-
-    ## Chat Text Test ##
-    print(mechlmm_core.chat_text("""
-                                write me a short story with names and location"
-                                """))
-
-    # current_pose = PoseData()
-    # target_pose = PoseData()
-
-    # current_pose.position.x = 0.0
-    # current_pose.position.y = 0.0
-
-    # current_pose.orientation.w = 1.0
-
-    # target_pose.position.x = 3.1
-    # target_pose.position.y = -3.0
-    # target_pose.orientation.z = -0.15
-    # target_pose.orientation.w = 0.98
-
-    # pose_dict = {
-    #     "position": {
-    #         "x": current_pose.position.x,
-    #         "y": current_pose.position.y,
-    #         "z": current_pose.position.z
-    #     },
-    #     "orientation": {
-    #         "x": current_pose.orientation.x,
-    #         "y": current_pose.orientation.y,
-    #         "z": current_pose.orientation.z,
-    #         "w": current_pose.orientation.w
-    #     }
-    # }
-
-    # _result = mechllm_core.chat_tool(
-    #     f"""
-    #         given the data below, the "arm_end_effector" is attached to the "robot_base" and the position is relative position to the "robot_base". 
-
-    #         if I want to grab the "target_obj", what would the sequence of function call, you can call single function multiple time
-
-    #         current robot pose: {current_pose}
-
-    #         target robot pose: {target_pose}
-    #     """
-    # )
-    # print(_result)
-
-    # tool_call = _result.tool_calls[0]
-    # print(tool_call)
-    # selected_tool = {
-    #         "add": mechllm_core.add, "multiply": mechllm_core.multiply, "move_base": mechllm_core.move_base, "move_arm_end_effector": mechllm_core.move_arm_end_effector, "arrived_stop": mechllm_core.arrived_stop
-    #     }[tool_call["name"].lower()]
-
-    # print(selected_tool)
-    # selected_tool.invoke(tool_call["args"])
-
-    # print("--")
-
-    # tt = move_base
-
-    # tt(tool_call["args"]["target_direction"])
-
-
-    # current_pose = {
-    #     "position": {
-    #         "x": 0.0,
-    #         "y": 0.0,
-    #         "z": 0.0,
-    #     },
-    #     "orientation": {
-    #         "x": 0.0,
-    #         "y": 0.0,
-    #         "z": 0.0,
-    #         "w": 1.0,
-    #     }
-    # }
-
-    # target_pose = {
-    #     "position": {
-    #         "x": 2.1,
-    #         "y": -1.0,
-    #         "z": 0.0,
-    #     },
-    #     "orientation": {
-    #         "x": 0.0,
-    #         "y": 0.0,
-    #         "z": -0.15,
-    #         "w": 0.98,
-    #     }
-    # }
-
-    # # print(mechllm_core.chat_tool("What is 3 * 12? Also, what is 11 + 49?"))
-
-    # _result =(mechllm_core.chat_tool(
-    #     """
-    #         given the data below, the "arm_end_effector" is attached to the "robot_base" and the position is relative position to the "robot_base". 
-
-    #         if I want to grab the "target_obj", what would the sequence of function call, you can call single function multiple time
-
-    #         {
-    #             "robot_base": {
-    #                 "position": {
-    #                     "x": 3,
-    #                     "y": 2,
-    #                     "z": 2
-    #                 }
-    #             },
-    #             "arm_end_effector": {
-    #                 "position": {
-    #                     "x": 0,
-    #                     "y": 1,
-    #                     "z": 1
-    #                 }
-    #             }
-    #         }
-
-    #         {
-    #             "target_obj":{
-    #                 "position": {
-    #                     "x": 5,
-    #                     "y": 2,
-    #                     "z": 3
-    #                 }
-    #             }
-    #         }
-    #     """
-    # ))
-
-    # _functions[0].invoke(_args[0])
-
-    # function_list = []
-    # function_arg_list = []
-    # for tool_call in _result.tool_calls:
-    #     selected_tool = {"add": self.add, "multiply": self.multiply, "move_base": self.move_base, "move_arm_end_effector": self.move_arm_end_effector, "arrived_stop": self.arrived_stop}[tool_call["name"].lower()]
-    #     function_list.append(selected_tool)
-    #     function_arg_list.append(tool_call["args"])
-    #     # tool_output = selected_tool.invoke(tool_call["args"])
-    #     # print(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-    #     # print("---")
-
-    # print(function_list)
-    # print(function_arg_list)
-
-    # return function_list, function_arg_list
-    
-    # mechllm_core.chat_text_knowledge("what is the guy doing")
-    # mechllm_core.chat_text_knowledge("what is in front of the wall")
-    # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
-
-    # print(mechllm_core.chat_text("""
-    #                             how are you"
-    #                             """))
-    
-    # json_schema = {
-    #     "title": "story",
-    #     "description": "give me a break down of story",
-    #     "type": "object",
-    #     "properties": {
-    #         "names": {
-    #             "type": "array",
-    #             "items": {
-    #                 "type": "string"
-    #             },
-    #             "description": "list of name that shows up in the story",
-    #         },
-    #         "locations": {
-    #             "type": "string",
-    #             "description": "list of locations that shows up in the story"
-    #         }
-    #     },
-    #     "required": ["names", "locations"]
-    # }
-    
-    # print(mechlmm_core.chat_text("""
-    #                             write me a short story with names and location"
-    #                             """, json_schema))
-    
-    # db_objects = ["wall","person", "background", "phone", "cloth"]
-
-    # json_schema = {
-    #     "title": "find_item_parser",
-    #     "description": "return the similar items that mentioned in the question",
-    #     "type": "object",
-    #     "properties": {
-    #         "objects": {
-    #             "type": "array",
-    #             "items": {
-    #                 "type": "string"
-    #             },
-    #             "description": "the objects that mentioned",
-    #         },
-    #     },
-    #     "required": ["objects"]
-    # }
-
-    # print(mechllm_core.chat_text(f"""
-    #                             Dont answer the question, just parser the following question and find the similar item in the list provided: 
-    #                             'I am looking for my phone '
-                            
-    #                             {db_objects}
-
-    #                             return the excat name of the matching item in provided list as array,
-    #                             Only return the JSON array, no need for the reasoning or any additional content.
-                                
-    #                             """
-    #                             ))
-
-    # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
-    # mechllm_core.chat_img(base64_image)
-
-    # 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
+    pass

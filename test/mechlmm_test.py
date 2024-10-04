@@ -1,130 +1,102 @@
 from dotenv import load_dotenv
 load_dotenv()
+import google.generativeai as genai
 
-# from mechlmm_py import MechLMMCore, utilities_core, lmm_function_pool
+from mechlmm_py import MechLMMCore, DebugCore, utilities_core, lmm_function_pool
 
-# mechlmm_core = MechLMMCore()
+from typing import Optional, List
+from pydantic import BaseModel, Field
+from langchain_core.utils.function_calling import convert_to_openai_function
 
-# base64_image = utilities_core.jpg_to_base64("./test.jpg")
-# print(mechlmm_core.chat_img("give me a list of objects in the list, and its bounding box", base64_image))
-
-# mechlmm_core.chat_tool([lmm_function_pool.manipulation,lmm_function_pool.navigation], "go back home")
-
-# ### Chat Text
-
-# print(mechlmm_core.chat_text("""
-#                             How are you
-#                             """))
-
-# json_schema = {
-#     "title": "joke",
-#     "description": "Joke to tell user.",
-#     "type": "object",
-#     "properties": {
-#         "setup": {
-#             "type": "string",
-#             "description": "The setup of the joke",
-#         },
-#         "punchline": {
-#             "type": "string",
-#             "description": "The punchline to the joke",
-#         },
-#         "rating": {
-#             "type": "integer",
-#             "description": "How funny the joke is, from 1 to 10",
-#             "default": None,
-#         },
-#     },
-#     "required": ["setup", "punchline"],
-# }
-
-# print(mechlmm_core.chat_text("""
-#                             write me a short story with names and location"
-#                             """, json_schema))
+mechlmm_core = MechLMMCore()
+debug_core = DebugCore()
 
 
-# #### Chat Image
+#### Chat Text
+# debug_core.log_key("--------- Chat Text ---------")
+# # print(mechlmm_core.chat_text("""
+# #                             How are you
+# #                             """))
 
-# # base64_image = utilities_core.jpg_to_base64("../data/images/art_1.jpg")
-# # mechllm_core.chat_img(base64_image)
+# class ListItems(BaseModel):
+#     '''list of items'''
 
+#     items: List[str] = Field(..., description="the list of items")
 
+# test1 = ["black hair", "face", "cloth"]
+# test2 = ["head", "white cloth", "eyes"]
 
-# from langchain_google_vertexai import VertexAI
+# dict_schema = convert_to_openai_function(ListItems)
 
-# # To use model
-# model = VertexAI(model_name="gemini-pro")
-# message = "how are you"
-# print(model.invoke(message))
-# message = "how are you"
-# print(model.invoke(message))
-# message = "how are you"
-# print(model.invoke(message))
-
-
-
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro")
-# print(llm.invoke("Write me a ballad about LangChain"))
-
-
-# from typing import Optional
-
-# from pydantic import BaseModel, Field
-
-
-# json_schema = {
-#     "title": "joke",
-#     "description": "Joke to tell user.",
-#     "type": "object",
-#     "properties": {
-#         "setup": {
-#             "type": "string",
-#             "description": "The setup of the joke",
-#         },
-#         "punchline": {
-#             "type": "string",
-#             "description": "The punchline to the joke",
-#         },
-#         "rating": {
-#             "type": "integer",
-#             "description": "How funny the joke is, from 1 to 10",
-#             "default": None,
-#         },
-#     },
-#     "required": ["setup", "punchline"],
-# }
-
-# class Joke(BaseModel):
-#     '''Joke to tell user.'''
-
-#     setup: str = Field(description="The setup of the joke")
-#     punchline: str = Field(description="The punchline to the joke")
-#     rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
-
-
-# structured_llm = llm.with_structured_output(Joke)
-# _result = structured_llm.invoke("Tell me a joke about cats")
+# _result, _ = mechlmm_core.chat_text(f"""
+#                             tell me a joke
+#                             """, dict_schema, "test")
 
 # print(_result)
-# print(_result.punchline)
+# print(_result[0])
+# print(_result[0].items)
+# print(_result[0].type)
+# print(_result[0].items["items"])
 
 
-import base64
-import httpx
-from langchain_core.messages import HumanMessage
 
-image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
-message = HumanMessage(
-    content=[
-        {"type": "text", "text": "Return bounding boxes around each object, for each one return [ymin, xmin, ymax, xmax]"},
-        {
-            "type": "image_url",
-            "image_url": {"url": f"data:image/jpeg;base64,{image_data}"},
-        },
-    ]
-)
-ai_msg = llm.invoke([message])
-print(ai_msg.content)
+#### Chat Image
+debug_core.log_key("--------- Chat Image ---------")
+
+class Item(BaseModel):
+    '''detail break down of item'''
+
+    name: str = Field(..., description="the name of the object detected")
+    position: List[float] = Field(..., description="the bounding box coordinate of the object detected, such as ['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y']")
+    features: List[str] = Field(..., description="the key features of the object detected")
+
+class ItemList(BaseModel):
+    '''a list of items description'''
+
+    objects: List[Item] = Field(..., description="the list of items")
+    description: str = Field(..., description="overall description of what is seen in the image")
+
+dict_schema = convert_to_openai_function(ItemList)
+
+image_url = utilities_core.jpg_to_base64("./test.jpg")
+# _result, _ = mechlmm_core.chat_img("Return bounding boxes around the person, for each one return [ymin, xmin, ymax, xmax]", 
+#                       image_url)
+
+_result, _ = mechlmm_core.chat_img("Give me a list of items, return bounding boxes around each object, for each one return [ymin, xmin, ymax, xmax]", 
+                      image_url, dict_schema, "test")
+
+print(_result)
+print(_result[0])
+print(type(_result[0]))
+try:
+    print("1")
+    print(_result[0]["args"])
+except:
+    pass
+
+try:
+    print("2")
+    print(_result[0]["args"]["description"])
+except:
+    pass
+
+try:
+    print("3")
+    print(_result[0]["args"]["objects"])
+except:
+    pass
+
+try:
+    print("4")
+    print(_result[0]["args"]["objects"][0])
+except:
+    pass
+
+
+#### Chat Tools
+# debug_core.log_key("--------- Chat Tools ---------")
+
+# mechlmm_core.chat_tool([lmm_function_pool.manipulation,
+#                         lmm_function_pool.navigation
+#                         ], 
+#                        "go back home")

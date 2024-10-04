@@ -4,6 +4,7 @@ from .mechlmm_core import MechLMMCore
 from .postgres_core import PostgresCore
 from .debug_core import DebugCore
 from . import utilities_core
+from . import lmm_function_pool
 
 import os
 import time
@@ -46,8 +47,9 @@ class VisionCore:
             
         json_object, _tag = self.image_context_analyzer(_frame)
         
+        self.debug_core.log_key(json_object[0]["args"])
         try:
-            self.frame_context_list.append(json_object["description"])
+            self.frame_context_list.append(json_object[0]["args"]["description"])
 
             self.debug_core.log_key("------ video check-----")
             self.debug_core.log_info(self.current_video_filename)
@@ -67,7 +69,7 @@ class VisionCore:
 
 
             # Object DB
-            for object in json_object["objects"]:
+            for object in json_object[0]["args"]["objects"]:
                 final_features = None
                 final_reference_videos = []
                 final_summary = ""
@@ -100,54 +102,17 @@ class VisionCore:
 
 
     def image_context_analyzer(self, _frame):
-        base64_image = utilities_core.opencv_frame_to_base64(_frame)
-        image_url = f"data:image/jpeg;base64,{base64_image}"
+        image_url = utilities_core.opencv_frame_to_base64(_frame)
 
-        # tag = {"filename": "test"}
         tag = {"filename": self.current_video_filename}
-
         question = "analysis this image, and give me a detail break down of list of objects in the image"
 
-        json_schema = {
-            "title": "image_analysis",
-            "description": "give a detail analysis of what happen in the image",
-            "type": "object",
-            "properties": {
-                "objects": {
-                    "type": "object",
-                    "description": "the list of objects",
-                    "properties": {
-                        "name": {
-                            "type": "string",
-                            "description": "the name of the object detected",
-                        },
-                        "position": {
-                            "type": "array",
-                            "items": {
-                                "type": "number"
-                            },
-                            "description": "the bounding box coordinate of the object detected, such as ['top_left_x', 'top_left_y', 'bottom_right_x', 'bottom_right_y']",
-                        },
-                        "features": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            },
-                            "description": "the key features of the object detected",
-                        },
-                    }
-                },
-                "description": {
-                    "type": "string",
-                    "description": "Overall description of what is seen in the image"
-                }
-            },
-            "required": ["objects", "description"]
-        }
+        _result, _tag = self.mechlmm_core.chat_img(question, 
+                                             image_url, 
+                                             self.mechlmm_core.basemodel_to_json(lmm_function_pool.ObjectList), 
+                                             tag)
 
-        _result = self.mechlmm_core.chat_img(question, image_url, json_schema, tag)
-
-        return _result
+        return _result, _tag
     
     def video_analyzer(self, _db_reference_videos, _elapsed_time):
         _current_time = int(time.time())
@@ -178,22 +143,25 @@ class VisionCore:
             self.debug_core.log_info(_db_features)
             self.debug_core.log_info(_current_features)
 
-            features_summary, _ = self.mechlmm_core.chat_text(f"""
-                                        Merge the items with similar meanings from the provided lists below. 
-                                        Format the final output as one single list as [feature1, feature2, feature3]. 
-                                        Only return the JSON array of features, no need for the reasoning or any additional content.
-
+            features_summary, _ = self.mechlmm_core.chat_text(
+                                        f"""
+                                        Merge items with similar meanings from the provided lists below. 
+                                        Consider features with synonymous or overlapping meanings as duplicates and merge them. 
+                                        Remove any redundant entries to ensure that each feature in 
+                                        the final list is unique and represents distinct information.
                                         {_db_features + _current_features}
-                                        """)
+                                        """,
+                                        self.mechlmm_core.basemodel_to_json(lmm_function_pool.ListItems)
+                                        )
             
             self.debug_core.log_key("------ features mege output from llm ------")
-            self.debug_core.log_key(features_summary)
+            self.debug_core.log_key(features_summary[0]["args"]["items"])
             
-            output_features = utilities_core.llm_output_list_cleaner(features_summary)
-            self.debug_core.log_info("------ features after clean up ------")
-            self.debug_core.log_key(output_features)
+            # output_features = utilities_core.llm_output_list_cleaner(features_summary)
+            # self.debug_core.log_info("------ features after clean up ------")
+            # self.debug_core.log_key(output_features)
 
-            return output_features
+            return features_summary[0]["args"]["items"]
         
         else:
             return _current_features
