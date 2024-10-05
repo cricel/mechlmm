@@ -4,6 +4,7 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_anthropic import ChatAnthropic
 
 import cv2
 
@@ -32,6 +33,10 @@ class MechLMMCore:
             max_retries=2,
         )
         
+        self.claude_model = ChatAnthropic(
+            model='claude-3-opus-20240229'
+        )
+
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
 
@@ -39,9 +44,85 @@ class MechLMMCore:
 
         self.mechlmm_model = self.gemini_model
 
-    def chat(self):
+    def chat(self, _question, _tools = None, _base_img = None, _schema = None, _tag = None, _model = None):
+        # self.debug_core.log_info("------ llm chat calling ------")
+        
+        # query = None
+        # llm_model = None
+
+        # if(_schema):
+        #     llm_model = self.mechlmm_model.with_structured_output(_schema)
+        # else:
+        #     llm_model = self.mechlmm_model
+
+        # if(_base_img):
+        #     query = [
+        #         HumanMessage(
+        #             content=[
+        #                 {
+        #                     "type": "text", 
+        #                     "text": _question
+        #                 },
+        #                 {
+        #                     "type": "image_url",
+        #                     "image_url": _base_img
+        #                 },
+        #             ]
+        #         )
+        #     ]
+        # else:
+        #     query = [
+        #         HumanMessage(
+        #             content=[
+        #                 {
+        #                     "type": "text", 
+        #                     "text": _question
+        #                 }
+        #             ]
+        #         )
+        #     ]
+
+        # self.llm_with_tools = self.mechlmm_model.bind_tools(_tools)
+        # _result = self.llm_with_tools.invoke(query)
+        
+        # self.debug_core.log_info(_result)
+
+        # if(_schema):
+        #     return _result.tool_calls, _tag
+        # else:
+        #     return _result.content, _tag
         pass
     
+    def chat_data(self, _question, _schema = None, _tag = None):
+        self.debug_core.log_info("------ chat_data output ------")
+
+        text_llm = None
+
+        if(_schema):
+            text_llm = self.claude_model.with_structured_output(_schema)
+        else:
+            text_llm = self.claude_model
+
+        result = text_llm.invoke(
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "text", 
+                            "text": _question
+                        },
+                    ]
+                )
+            ]
+        )
+
+        self.debug_core.log_info(result)
+
+        if(_schema):
+            return result[0]["args"], _tag
+        else:
+            return result.content, _tag
+
     def chat_text_knowledge(self, _question):
         self.debug_core.log_info("------ chat_text_knowledge ------")
         db_item_list = self.postgres_core.get_objects_map_name_list_db()
