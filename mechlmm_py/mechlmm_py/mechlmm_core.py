@@ -174,7 +174,7 @@ class MechLMMCore:
         self.debug_core.log_info(result)
 
         if(_schema):
-            return result, _tag
+            return result[0]["args"], _tag
         else:
             return result.content, _tag
 
@@ -208,7 +208,10 @@ class MechLMMCore:
 
         self.debug_core.log_info(result)
 
-        return result, _tag
+        if(_schema):
+            return result[0]["args"], _tag
+        else:
+            return result.content, _tag
 
     def chat_video(self, _video_path, _question, _start_time = 0, _end_time = 0, _interval_time = 5):
         conversion_list = []
@@ -321,7 +324,10 @@ class MechLMMCore:
         
         self.debug_core.log_info(_result)
 
-        return _result, _tag
+        if(_schema):
+            return _result.tool_calls, _tag
+        else:
+            return _result.content, _tag
 
     def basemodel_to_json(self, _basemodel):
         return convert_to_openai_function(_basemodel)
