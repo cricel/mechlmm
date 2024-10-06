@@ -36,8 +36,9 @@ def chat():
     tag = data.get('tag', None)
     base_img = data.get('base_img', None)
     tools = data.get('tools', None)
+    model = data.get('model', None)
 
-    result = mechlmm_core.chat_tool(tools, question, base_img, schema, tag)
+    result = mechlmm_core.chat(question, tools, base_img, schema, tag, model)
 
     return jsonify(result)
 

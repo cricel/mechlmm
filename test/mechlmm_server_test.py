@@ -25,7 +25,7 @@ from mechlmm_py import utilities_core, lmm_function_pool
 # }
 
 
-url = 'http://127.0.0.1:5001/mechlmm/chat/images'
+url = 'http://127.0.0.1:5001/mechlmm/chat'
 image_url = utilities_core.jpg_to_base64("./test.jpg")
 image_url_1 = utilities_core.jpg_to_base64("./test_1.jpg")
 
@@ -44,11 +44,20 @@ class ItemList(BaseModel):
 
 dict_schema = convert_to_openai_function(ItemList)
 
+tool_schema_1 = convert_to_openai_function(lmm_function_pool.manipulation)
+tool_schema_2 = convert_to_openai_function(lmm_function_pool.navigation)
+
 data = {
-    'question': 'what is in the first image, what is in the second image',
+    'question': 'how are you',
+    # 'question': 'what is in the first image, what is in the second image',
+    # 'question': 'what are some common lucky number? and what is the sum of them',
+    # 'question': 'what are some common objects in the house',
+    # 'question': 'pick up the laptop, and go back home, give me the list of action that need to take, use the tool provided',
     # 'schema': dict_schema,
     'tag': 'value2',
-    'base_img': [image_url, image_url_1]
+    # 'base_img': [image_url, image_url_1],
+    # 'tools': [tool_schema_1, tool_schema_2],
+    'model': "claude"
 }
 
 
@@ -92,6 +101,5 @@ if response.status_code == 200:
     
     _result = response.json()
     print('Success: \n', _result)
-    print('Success: \n', _result[0][0])
 else:
     print('Failed:', response.status_code, response.text)

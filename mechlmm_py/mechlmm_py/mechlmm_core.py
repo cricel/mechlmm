@@ -44,55 +44,81 @@ class MechLMMCore:
 
         self.mechlmm_model = self.gemini_model
 
-    def chat(self, _question, _tools = None, _base_img = None, _schema = None, _tag = None, _model = None):
-        # self.debug_core.log_info("------ llm chat calling ------")
-        
-        # query = None
-        # llm_model = None
-
-        # if(_schema):
-        #     llm_model = self.mechlmm_model.with_structured_output(_schema)
-        # else:
-        #     llm_model = self.mechlmm_model
-
-        # if(_base_img):
-        #     query = [
-        #         HumanMessage(
-        #             content=[
-        #                 {
-        #                     "type": "text", 
-        #                     "text": _question
-        #                 },
-        #                 {
-        #                     "type": "image_url",
-        #                     "image_url": _base_img
-        #                 },
-        #             ]
-        #         )
-        #     ]
-        # else:
-        #     query = [
-        #         HumanMessage(
-        #             content=[
-        #                 {
-        #                     "type": "text", 
-        #                     "text": _question
-        #                 }
-        #             ]
-        #         )
-        #     ]
-
-        # self.llm_with_tools = self.mechlmm_model.bind_tools(_tools)
-        # _result = self.llm_with_tools.invoke(query)
-        
-        # self.debug_core.log_info(_result)
-
-        # if(_schema):
-        #     return _result.tool_calls, _tag
-        # else:
-        #     return _result.content, _tag
-        pass
+    def chat(self, _question, _tools = None, _base_imgs = None, _schema = None, _tag = None, _model = None):
+        self.debug_core.log_info("------ llm chat calling ------")
     
+        lmm_model = None
+        content_list = [
+            {"type": "text", "text": _question}
+        ]
+
+        ## check model
+        if(_model == "claude"):
+            if (_base_imgs != None):
+                return "Claude did not support image"
+            self.mechlmm_model = self.claude_model
+        else:
+            self.mechlmm_model = self.gemini_model
+
+        ## check schema
+        if(_schema):
+            if (_tools != None):
+                return "schema did not work with tool output"
+            lmm_model = self.mechlmm_model.with_structured_output(_schema)
+        else:
+            lmm_model = self.mechlmm_model
+        
+        ## check tools
+        if(_tools): 
+            # lmm_model = self.mechlmm_model.bind_tools(_tools)
+            lmm_model = self.mechlmm_model.bind_tools(_tools, tool_choice="any")
+
+        ## check imgs
+        if(_base_imgs):
+            for img_url in _base_imgs:
+                content_list.append(
+                    {
+                        "type": "image_url",
+                        "image_url": img_url
+                    }
+                )
+
+        query = [
+                HumanMessage(
+                    content= content_list
+                )
+            ]
+        
+        
+        _result = lmm_model.invoke(query)
+        
+        self.debug_core.log_info(_result)
+
+        try:
+            # schema
+            return _result[0]["args"]
+        except:
+            pass
+        
+        try:
+            # tools
+            if(_result.tool_calls != []):
+                return _result.tool_calls
+        except:
+            pass
+
+        try:
+            # text
+            return _result.content
+        except:
+            pass
+            
+        try:
+            # claude structure output
+            return _result
+        except:
+            pass
+
     def chat_data(self, _question, _schema = None, _tag = None):
         self.debug_core.log_info("------ chat_data output ------")
 
