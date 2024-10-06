@@ -9,9 +9,9 @@ setup(
     version="0.1",
     packages=find_packages(),
     install_requires=read_requirements(),
-    entry_points={
-        'console_scripts': [
-            'mechlmm_serve=mechlmm_py.mechlmm_server:main',
-        ],
-    },
+    # entry_points={
+    #     'console_scripts': [
+    #         'mechlmm_serve=mechlmm_py.mechlmm_server:main',
+    #     ],
+    # },
 )
