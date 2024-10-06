@@ -72,6 +72,22 @@ def chat_img():
 
     return jsonify(result)
 
+@app.route('/mechlmm/chat/images', methods=['POST'])
+def chat_imgs():
+    data = request.json
+
+    if not data or 'question' not in data:
+        return jsonify({'error': 'Invalid Data'}), 400
+    
+    question = data['question']
+    schema = data.get('schema', None)
+    tag = data.get('tag', None)
+    base_img = data.get('base_img', None)
+
+    result = mechlmm_core.chat_imgs(question, base_img, schema, tag)
+
+    return jsonify(result)
+
 @app.route('/mechlmm/chat/tool', methods=['POST'])
 def chat_tool():
     data = request.json

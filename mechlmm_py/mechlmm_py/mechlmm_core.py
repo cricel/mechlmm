@@ -259,6 +259,43 @@ class MechLMMCore:
         else:
             return result.content, _tag
 
+    def chat_imgs(self, _question, _base_img_list, _schema = None, _tag = None):
+        self.debug_core.log_info("------ chat_img output ------")
+
+        img_llm = None
+
+        if(_schema):
+            img_llm = self.mechlmm_model.with_structured_output(_schema)
+        else:
+            img_llm = self.mechlmm_model
+
+        content_list = [
+            {"type": "text", "text": _question}
+        ]
+        for img_url in _base_img_list:
+            content_list.append(
+                {
+                    "type": "image_url",
+                    "image_url": img_url
+                }
+            )
+            
+        result = img_llm.invoke(
+            [
+                HumanMessage(
+                    content = content_list
+                )
+            ]
+        )
+
+        self.debug_core.log_info(result)
+
+        if(_schema):
+            return result[0]["args"], _tag
+        else:
+            return result.content, _tag
+
+
     def chat_img(self, _question, _base_img, _schema = None, _tag = None):
         self.debug_core.log_info("------ chat_img output ------")
 
