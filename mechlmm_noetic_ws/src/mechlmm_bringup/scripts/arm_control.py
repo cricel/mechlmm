@@ -36,20 +36,28 @@ pose_goal.position.x = 0.2517150938510895
 pose_goal.position.y = -0.0005048706661909819
 pose_goal.position.z = 0.28646329045295715
 
-move_group.set_pose_target(pose_goal)
-plan = move_group.plan()
-print(plan[0])
+# move_group.set_pose_target(pose_goal)
+# plan = move_group.plan()
+# print(plan[0])
 
-joint_trajectory = plan[1].joint_trajectory.points
-positions_list = [point.positions for point in joint_trajectory]
-print(positions_list)
+# joint_trajectory = plan[1].joint_trajectory.points
+# positions_list = [point.positions for point in joint_trajectory]
+# print(positions_list)
 
-joint_goal = move_group.get_current_joint_values()
-joint_goal = positions_list[-1]
-move_group.go(joint_goal, wait=True)
-move_group.stop()
+# joint_goal = move_group.get_current_joint_values()
+# joint_goal = positions_list[-1]
+# move_group.go(joint_goal, wait=True)
+# move_group.stop()
 
 
+waypoints = []
+current_pose = move_group.get_current_pose().pose
+waypoints.append(current_pose)
+waypoints.append(pose_goal)
+
+max_step = 0.01
+jump_threshold = 0.0
+(plan, fraction) = move_group.compute_cartesian_path(waypoints, max_step, jump_threshold)
 
 
 
