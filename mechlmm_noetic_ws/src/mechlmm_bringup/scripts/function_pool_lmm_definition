@@ -10,7 +10,6 @@ import moveit_commander
 from geometry_msgs.msg import Pose
 
 from std_msgs.msg import String
-from std_msgs.msg import Float32MultiArray
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist, TwistStamped, Point, Pose, Quaternion, PoseStamped
 
@@ -23,19 +22,14 @@ class FunctionPoolDefinition:
         self.dummy_sub = rospy.Subscriber("/dummy",String,self.dummy_callback)
 
         self.dummy_pub = rospy.Publisher('dummy', String, queue_size=10)
+        self.robot_cmd_publisher = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
-        self.robot_cmd_publisher = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        self.lmm_cmd_publisher = rospy.Publisher('/base_cmd/input/lmm', Twist, queue_size=10)
-
-        self.lmm_arm_control_pub = rospy.Publisher('/arm_control/input/lmm', Float32MultiArray, queue_size=10)
-        
         moveit_commander.roscpp_initialize(sys.argv)
 
         self.moveit_robot = moveit_commander.RobotCommander()
         self.moveit_scene = moveit_commander.PlanningSceneInterface()
         self.moveit_group = moveit_commander.MoveGroupCommander("arm")  
 
-        self.mux_input = True
 
         rospy.sleep(0.5)
 
@@ -68,21 +62,18 @@ class FunctionPoolDefinition:
             msg.linear.x = 0.0
             msg.angular.z = 0.0
 
-        if(self.mux_input):
-            self.lmm_cmd_publisher.publish(msg)
-        else:
-            self.robot_cmd_publisher.publish(msg)
-            self.debug_log.log_info(msg)
+        self.robot_cmd_publisher.publish(msg)
+        self.debug_log.log_info(msg)
 
-            time.sleep(1)
+        time.sleep(1)
 
-            msg.linear.x = 0.0
-            msg.angular.z = 0.0
+        msg.linear.x = 0.0
+        msg.angular.z = 0.0
 
-            self.debug_log.log_info("-----")
-            self.debug_log.log_info(msg)
+        self.debug_log.log_info("-----")
+        self.debug_log.log_info(msg)
 
-            self.robot_cmd_publisher.publish(msg)
+        self.robot_cmd_publisher.publish(msg)
 
     def arm_end_effector_control(self, _args):
         self.debug_log.log_flash(f"===> move_arm: {_args}")
@@ -114,18 +105,19 @@ class FunctionPoolDefinition:
         else:
             return
 
-        if(self.mux_input):
-            msg = Float32MultiArray()
-            msg.data = new_position
-            self.lmm_arm_control_pub.publish(msg)
-        else:
-            self.moveit_group.set_position_target(new_position)
+        self.moveit_group.set_position_target(new_position)
 
-            plan = self.moveit_group.go(wait=False)
+        plan = self.moveit_group.go(wait=True)
 
-            self.moveit_group.stop()
-            self.moveit_group.clear_pose_targets()
+        self.moveit_group.stop()
+        self.moveit_group.clear_pose_targets()
 
+    def arm_joint_control(self, _joints):
+        self.moveit_group.set_joint_value_target(_joints)
+
+        plan = self.moveit_group.go(wait=True)
+        self.moveit_group.stop()
+        self.moveit_group.clear_pose_targets()
 
     def trigger_gripper(self, _args):
         self.debug_log.log_flash(f"===> trigger_gripper: {_args}")

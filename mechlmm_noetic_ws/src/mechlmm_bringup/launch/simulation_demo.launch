@@ -31,4 +31,5 @@
         args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
     </node>
 
+    <node name="keyboard_input" pkg="mechlmm_bringup" type="keyboard_ros_listener.py" />
 </launch>

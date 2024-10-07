@@ -15,13 +15,16 @@ import requests
 
 from mechlmm_py import utilities_core, lmm_function_pool
 import function_pool_lmm_declaration
+from function_pool_definition import FunctionPoolDefinition
 
 class image_converter:
     def __init__(self):
+        self.function_pool_definition = FunctionPoolDefinition()
+
         self.bridge = CvBridge()
-        self.image_sub = rospy.Subscriber("/camera/hand/image_raw",Image,self.hand_callback)
-        self.image_sub = rospy.Subscriber("/camera/head/image_raw",Image,self.head_callback)
-        self.image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.base_callback)
+        self.hand_image_sub = rospy.Subscriber("/camera/hand/image_raw",Image,self.hand_callback)
+        self.head_image_sub = rospy.Subscriber("/camera/head/image_raw",Image,self.head_callback)
+        self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.base_callback)
 
         # self.image_sub = rospy.Subscriber("/command",String,self.command_callback)
         rospy.Timer(rospy.Duration(1), self.timer_callback)
@@ -32,8 +35,15 @@ class image_converter:
         self.hand_cam = None
         self.base_cam = None
 
+        self.llm_tools_map = {
+            "arm_end_effector_control": self.function_pool_definition.arm_end_effector_control,
+            "move_robot": self.function_pool_definition.move_robot,
+            "trigger_gripper": self.function_pool_definition.trigger_gripper,
+        }
+
     def timer_callback(self, msg):
         self.llm_chat_image()
+        pass
 
     def llm_chat_image(self):
         if(not self.img_query):
@@ -65,7 +75,7 @@ class image_converter:
                 'tag': 'head_callback',
                 'base_img': [hand_image_url, head_image_url, base_image_url],
                 'tools': [convert_to_openai_function(function_pool_lmm_declaration.arm_end_effector_control),
-                          convert_to_openai_function(function_pool_lmm_declaration.arm_end_effector_rotation_control),
+                        #   convert_to_openai_function(function_pool_lmm_declaration.arm_end_effector_rotation_control),
                           convert_to_openai_function(function_pool_lmm_declaration.trigger_gripper),
                           convert_to_openai_function(function_pool_lmm_declaration.move_robot)
                           ]
@@ -76,6 +86,10 @@ class image_converter:
             if response.status_code == 200:
                 _result = response.json()
                 print('Success: \n', _result)
+                if(_result['type'] == 'tools'):
+                    selected_tool = self.llm_tools_map[_result['result'][0]['name'].lower()]
+                    selected_tool(_result['result'][0]['args'])
+
             else:
                 print('Failed:', response.status_code, response.text)
 
