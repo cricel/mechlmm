@@ -26,7 +26,9 @@ class image_converter:
         self.head_image_sub = rospy.Subscriber("/camera/head/image_raw",Image,self.head_callback)
         self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.base_callback)
 
-        # self.image_sub = rospy.Subscriber("/command",String,self.command_callback)
+        # self.lmm_command_sub = rospy.Subscriber("/lmm/command",String, self.lmm_command_callback)
+        self.lmm_command_pub = rospy.Publisher('/lmm/command', String, queue_size=10)
+
         rospy.Timer(rospy.Duration(1), self.timer_callback)
 
         self.img_query = False
@@ -87,9 +89,11 @@ class image_converter:
                 _result = response.json()
                 print('Success: \n', _result)
                 if(_result['type'] == 'tools'):
-                    selected_tool = self.llm_tools_map[_result['result'][0]['name'].lower()]
-                    selected_tool(_result['result'][0]['args'])
+                    for func in _result['result']:
+                        selected_tool = self.llm_tools_map[func['name'].lower()]
+                        selected_tool(func['args'])
 
+                    self.lmm_command_pub.publish("llm send")
             else:
                 print('Failed:', response.status_code, response.text)
 

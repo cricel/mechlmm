@@ -92,67 +92,76 @@ class MuxCommander:
 
 
     def lmm_command_callback(self, _msg):
-        if(_msg.data == "none"):
-            print("no lmm call")
+        print("-----------------incoming command")
+        # if(_msg.data == "none"):
+        #     print("no lmm call")
 
-        elif(_msg.data == "arm"):
-            if(self.keyboard_arm_data["timestamp"] == None):
-                self.keyboard_arm_data["data"] = None
+        # elif(_msg.data == "arm_end_effector_control"):
+        if(self.keyboard_arm_data["timestamp"] == None):
+            self.keyboard_arm_data["data"] = None
 
-            if(self.lmm_arm_data["timestamp"] == None):
-                self.lmm_arm_data["data"] = None
+        if(self.lmm_arm_data["timestamp"] == None):
+            self.lmm_arm_data["data"] = None
 
-            if(self.static_arm_data["timestamp"] == None):
-                self.static_arm_data["data"] = None
-            
-            _result = self.dynamic_weight_anylyzer(self.keyboard_arm_data["data"],
-                                                self.lmm_arm_data["data"],
-                                                self.static_arm_data["data"])
-            
-            self.moveit_group.set_position_target(_result)
+        if(self.static_arm_data["timestamp"] == None):
+            self.static_arm_data["data"] = None
+        
+        _result = self.dynamic_weight_anylyzer(self.keyboard_arm_data["data"],
+                                            self.lmm_arm_data["data"],
+                                            self.static_arm_data["data"])
+        
+        if(_result == []):
+            return
+        
+        print("-----> Move Arm")
+        self.moveit_group.set_position_target(_result)
 
-            self.keyboard_arm_data["timestamp"] = None
-            self.lmm_arm_data["timestamp"] = None
-            self.static_arm_data["timestamp"] = None
+        self.keyboard_arm_data["timestamp"] = None
+        self.lmm_arm_data["timestamp"] = None
+        self.static_arm_data["timestamp"] = None
 
-            plan = self.moveit_group.go(wait=False)
-            self.moveit_group.stop()
-            self.moveit_group.clear_pose_targets()
+        plan = self.moveit_group.go(wait=False)
+        self.moveit_group.stop()
+        self.moveit_group.clear_pose_targets()
 
-        elif(_msg.data == "base"):
-            if(self.keyboard_base_data["timestamp"] == None):
-                self.keyboard_base_data["data"] = None
+        # elif(_msg.data == "move_robot"):
+        if(self.keyboard_base_data["timestamp"] == None):
+            self.keyboard_base_data["data"] = None
 
-            if(self.lmm_base_data["timestamp"] == None):
-                self.lmm_base_data["data"] = None
+        if(self.lmm_base_data["timestamp"] == None):
+            self.lmm_base_data["data"] = None
 
-            if(self.static_base_data["timestamp"] == None):
-                self.static_base_data["data"] = None
-            
-            print(self.keyboard_base_data["data"])
+        if(self.static_base_data["timestamp"] == None):
+            self.static_base_data["data"] = None
 
-            _result = self.dynamic_weight_anylyzer(self.keyboard_base_data["data"],
-                                                self.lmm_base_data["data"],
-                                                self.static_base_data["data"])
-            
-            print(_result)
-            
-            msg = Twist()
-            msg.linear.x = _result[0]
-            msg.linear.y = _result[1]
-            msg.linear.z = _result[2]
-            msg.angular.x = _result[3]
-            msg.angular.y = _result[4]
-            msg.angular.z = _result[5]
+        _result = self.dynamic_weight_anylyzer(self.keyboard_base_data["data"],
+                                            self.lmm_base_data["data"],
+                                            self.static_base_data["data"])
+        
+        if(_result == []):
+            return
+        
+        print("-----> Move Base")
+        msg = Twist()
+        msg.linear.x = _result[0]
+        msg.linear.y = _result[1]
+        msg.linear.z = _result[2]
+        msg.angular.x = _result[3]
+        msg.angular.y = _result[4]
+        msg.angular.z = _result[5]
 
-            self.robot_cmd_publisher.publish(msg)
+        self.keyboard_base_data["timestamp"] = None
+        self.lmm_base_data["timestamp"] = None
+        self.static_base_data["timestamp"] = None
 
-            time.sleep(1)
+        self.robot_cmd_publisher.publish(msg)
 
-            msg.linear.x = 0.0
-            msg.angular.z = 0.0
+        time.sleep(1)
 
-            self.robot_cmd_publisher.publish(msg)
+        msg.linear.x = 0.0
+        msg.angular.z = 0.0
+
+        self.robot_cmd_publisher.publish(msg)
 
     def get_first_non_empty_length(self, *arrays):
         for arr in arrays:

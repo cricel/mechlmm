@@ -83,6 +83,8 @@ class FunctionPoolDefinition:
             self.debug_log.log_info(msg)
 
             self.robot_cmd_publisher.publish(msg)
+        
+        return msg
 
     def arm_end_effector_control(self, _args):
         self.debug_log.log_flash(f"===> move_arm: {_args}")
