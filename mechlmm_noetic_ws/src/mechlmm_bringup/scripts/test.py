@@ -1,54 +1,103 @@
-import numpy as np
+#!/usr/bin/env python
 
-from scipy.spatial.transform import Rotation as R
+### quick end effotor pos check up
+# [INFO] [1728297113.791033, 96.706000]: End Effector Pose: header: 
+#   seq: 0
+#   stamp: 
+#     secs: 0
+#     nsecs:         0
+#   frame_id: "map"
+# pose: 
+#   position: 
+#     x: -1.2409061375463193
+#     y: -0.5796078003258718
+#     z: 0.2574291294229187
+#   orientation: 
+#     x: 0.00045537707141373287
+#     y: -0.007999632933302858
 
-def get_rotation_from_p2_to_p1(p1, p2):
-    # Calculate the direction vectors
-    direction1 = np.array(p2) - np.array(p1)
-    direction1 /= np.linalg.norm(direction1)  # Normalize
+import rospy
+import tf
+from geometry_msgs.msg import PointStamped, Pose, PoseStamped
 
-    # Assuming the upward vector is (0, 0, 1) for a typical 3D environment
-    upward = np.array([0, 0, 1])
+import moveit_commander
+import sys
+
+def get_end_effector_pose():
+    rospy.init_node('end_effector_position_node')
+
+    # Create a TF listener to get transformations
+    listener = tf.TransformListener()
     
-    # Calculate the rotation axis (cross product)
-    rotation_axis = np.cross(upward, direction1)
-    rotation_angle = np.arccos(np.clip(np.dot(upward, direction1), -1.0, 1.0))
+    moveit_commander.roscpp_initialize(sys.argv)
 
-    # Create the rotation
-    rotation = R.from_rotvec(rotation_axis * rotation_angle)
-    return rotation.as_quat()  # Return quaternion representation
+    moveit_robot = moveit_commander.RobotCommander()
+    moveit_scene = moveit_commander.PlanningSceneInterface()
+    moveit_group = moveit_commander.MoveGroupCommander("arm")  
 
+    # Give some time for the listener to accumulate data
+    rospy.sleep(1.0)
 
-def get_point_between(p1, p2, distance):
-    # Convert points to numpy arrays for easier calculations
-    point1 = np.array(p1)  # (x1, y1, z1)
-    point2 = np.array(p2)  # (x2, y2, z2)
+    try:
+        listener.waitForTransform("map", "link1", rospy.Time(), rospy.Duration(4.0))
 
-    # Calculate the direction vector from point 1 to point 2
-    direction = point2 - point1
+        # # Lookup transform from 'map' frame to 'end_effector' frame
+        # (trans, rot) = listener.lookupTransform('map', 'end_effector_link', rospy.Time(0))
 
-    # Normalize the direction vector
-    norm = np.linalg.norm(direction)
-    if norm == 0:
-        raise ValueError("Points p1 and p2 cannot be the same.")
+        # print("Translation: ", trans)
+        # print("Rotation: ", rot)
 
-    normalized_direction = direction / norm
+        # # You can convert the position and orientation into a PoseStamped message if needed
+        # pose = PoseStamped()
+        # pose.header.frame_id = "map"
+        # pose.pose.position.x = trans[0]
+        # pose.pose.position.y = trans[1]
+        # pose.pose.position.z = trans[2]
+        # pose.pose.orientation.x = rot[0]
+        # pose.pose.orientation.y = rot[1]
+        # pose.pose.orientation.z = rot[2]
+        # pose.pose.orientation.w = rot[3]
 
-    # Scale the normalized direction by the desired distance
-    scaled_vector = normalized_direction * distance
+        object_position_in_map = PoseStamped()
+        object_position_in_map.header.frame_id = "map"
+        object_position_in_map.pose.orientation.x = 0.0
+        object_position_in_map.pose.orientation.y = 0.0
+        object_position_in_map.pose.orientation.z = 0.0
+        object_position_in_map.pose.orientation.w = 1.0
+        object_position_in_map.pose.position.x = -1.3509061375463193
+        object_position_in_map.pose.position.y = -0.5796078003258718
+        object_position_in_map.pose.position.z = 0.3574291294229187
 
-    # Calculate the new point
-    new_point = point2 + scaled_vector
-    return new_point
+        # object_position_in_link1 = listener.transformPoint('link1', object_position_in_map)
+        transformed_pose = listener.transformPose("link1", object_position_in_map)
 
-# Example usage:
-p1 = (1.0, 2.0, 3.0)  # Point 1 (x1, y1, z1)
-p2 = (4.0, 5.0, 6.0)  # Point 2 (x2, y2, z2)
-distance_from_p2 = 0.5
+        # (arm_trans, arm_rot) = listener.lookupTransform('link1', 'end_effector_link', rospy.Time(0))
 
-new_position = get_point_between(p1, p2, distance_from_p2)
-print("New position:", new_position)
+        # print("Translation: ", arm_trans)
+        # print("Rotation: ", arm_rot)
 
-# Calculate the rotation from p2 to p1
-rotation_quaternion = get_rotation_from_p2_to_p1(p1, p2)
-print("Rotation quaternion:", rotation_quaternion)
+        print(transformed_pose)
+
+        moveit_group.set_position_target([transformed_pose.pose.position.x, 
+                                          transformed_pose.pose.position.y, 
+                                          transformed_pose.pose.position.z])
+        plan1 = moveit_group.plan()
+
+        plan = moveit_group.go(wait=True)
+        moveit_group.stop()
+        moveit_group.clear_pose_targets()
+        moveit_commander.roscpp_shutdown()
+
+        # return pose
+
+    except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+        rospy.logerr("Could not find transform between 'map' and 'end_effector'")
+        return None
+
+if __name__ == '__main__':
+    try:
+        get_end_effector_pose()
+        # if pose:
+        #     rospy.loginfo("End Effector Pose: %s", pose)
+    except rospy.ROSInterruptException:
+        pass
