@@ -46,7 +46,8 @@ class MechLMMCore:
 
     def chat(self, _question, _tools = None, _base_imgs = None, _schema = None, _tag = None, _model = None):
         self.debug_core.log_info("------ llm chat calling ------")
-    
+
+        return_type = "json"
         lmm_model = None
         content_list = [
             {"type": "text", "text": _question}
@@ -96,26 +97,30 @@ class MechLMMCore:
 
         try:
             # schema
-            return _result[0]["args"]
+            return_type = "json"
+            return _result[0]["args"], return_type
         except:
             pass
         
         try:
             # tools
+            return_type = "tools"
             if(_result.tool_calls != []):
-                return _result.tool_calls
+                return _result.tool_calls, return_type
         except:
             pass
 
         try:
             # text
-            return _result.content
+            return_type = "content"
+            return _result.content, return_type
         except:
             pass
             
         try:
             # claude structure output
-            return _result
+            return_type = "json"
+            return _result, return_type
         except:
             pass
 

@@ -38,9 +38,10 @@ def chat():
     tools = data.get('tools', None)
     model = data.get('model', None)
 
-    result = mechlmm_core.chat(question, tools, base_img, schema, tag, model)
+    result, result_type = mechlmm_core.chat(question, tools, base_img, schema, tag, model)
 
-    return jsonify(result)
+    return jsonify({"result": result, 
+                    "type": result_type})
 
 @app.route('/mechlmm/chat/text', methods=['POST'])
 def chat_text():
@@ -53,9 +54,10 @@ def chat_text():
     schema = data.get('schema', None)
     tag = data.get('tag', None)
 
-    result = mechlmm_core.chat_text(question, schema, tag)
+    result, result_type = mechlmm_core.chat_text(question, schema, tag)
 
-    return jsonify(result)
+    return jsonify({"result": result, 
+                    "type": result_type})
 
 @app.route('/mechlmm/chat/image', methods=['POST'])
 def chat_img():
