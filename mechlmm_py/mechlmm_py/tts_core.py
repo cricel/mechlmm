@@ -2,7 +2,7 @@ from gtts import gTTS
 import os
 import playsound
 
-class GTTS_Core():
+class TTS_Core():
     # def __init__(self):
         
     def tts_play(self, input_text):
@@ -19,5 +19,5 @@ class GTTS_Core():
         os.remove("output.mp3")
 
 if __name__ == '__main__':
-    tts_core = GTTS_Core()
+    tts_core = TTS_Core()
     tts_core.tts_play("hello this is a test speech I am teaching CS3 lab and we gonna cover the topic of dynamic array with C++ today")

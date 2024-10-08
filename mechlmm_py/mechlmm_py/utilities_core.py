@@ -5,7 +5,11 @@ import ast
 import os
 from datetime import datetime, timedelta
 
+import requests
+
 from .debug_core import DebugCore
+
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 debug_core = DebugCore()
 debug_core.verbose = 3
@@ -115,6 +119,31 @@ def clear_media_storage(_data_path):
     for file in video_files:
         os.remove(os.path.join(_data_path, "videos", file))
         debug_core.log_info(f"Deleted old video file: {file}")
+
+def rest_post_request(_data, _server_url = 'http://192.168.1.134:5001/mechlmm/chat'):
+    """
+    data = {
+        'question': 'question',
+        'schema': schema,
+        'tag': 'tag',
+        'base_img': [base_img_1, base_img_2],
+        'tools': [tools_1, tools_2],
+        'model': "claude"
+    }
+    """
+
+    response = requests.post(_server_url, json = _data)
+
+    if response.status_code == 200:
+        
+        result = response.json()
+        return result
+    else:
+        print('Failed:', response.status_code, response.text)
+        return None
+    
+def basemodel_to_json(_basemodel):
+    return convert_to_openai_function(_basemodel)
 
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")

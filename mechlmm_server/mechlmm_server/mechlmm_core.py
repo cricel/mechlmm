@@ -1,12 +1,11 @@
 from langchain_core.messages import HumanMessage
-from langchain_core.utils.function_calling import convert_to_openai_function
 
 from langchain_openai import ChatOpenAI
 from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_anthropic import ChatAnthropic
 
-import cv2
+from mechlmm_py import DebugCore
 
 class MechLMMCore:
     def __init__(self, data_path = "../output"):
@@ -36,13 +35,12 @@ class MechLMMCore:
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
 
-        self.postgres_core = PostgresCore(False)
-
         self.mechlmm_model = self.gemini_model
 
     def chat(self, _question, _tools = None, _base_imgs = None, _schema = None, _tag = None, _model = None):
         self.debug_core.log_info("------ llm chat calling ------")
-    
+
+        return_type = "json"
         lmm_model = None
         content_list = [
             {"type": "text", "text": _question}
@@ -51,7 +49,7 @@ class MechLMMCore:
         ## check model
         if(_model == "claude"):
             if (_base_imgs != None):
-                return "Claude did not support image"
+                return "Claude did not support image", _tag, "Error"
             self.mechlmm_model = self.claude_model
         else:
             self.mechlmm_model = self.gemini_model
@@ -59,7 +57,7 @@ class MechLMMCore:
         ## check schema
         if(_schema):
             if (_tools != None):
-                return "schema did not work with tool output"
+                return "schema did not work with tool output", _tag, "Error"
             lmm_model = self.mechlmm_model.with_structured_output(_schema)
         else:
             lmm_model = self.mechlmm_model
@@ -92,26 +90,30 @@ class MechLMMCore:
 
         try:
             # schema
-            return _result[0]["args"]
+            return_type = "json"
+            return _result[0]["args"], _tag, return_type
         except:
             pass
         
         try:
             # tools
+            return_type = "tools"
             if(_result.tool_calls != []):
-                return _result.tool_calls
+                return _result.tool_calls, _tag, return_type
         except:
             pass
 
         try:
             # text
-            return _result.content
+            return_type = "content"
+            return _result.content, _tag, return_type
         except:
             pass
             
         try:
             # claude structure output
-            return _result
+            return_type = "json"
+            return _result, _tag, return_type
         except:
             pass
 

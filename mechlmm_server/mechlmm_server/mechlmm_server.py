@@ -15,7 +15,7 @@ def root():
 
 @app.route('/mechlmm/', methods=['GET'])
 def mechlmm_api():
-    return jsonify({'api_type': '/mechlmm/chat/text, chat_img, chat_video, chat_kowledge'})
+    return jsonify({'content': 'welcome to mechlmm'})
 
 @app.route('/mechlmm/chat', methods=['POST'])
 def chat():
@@ -31,9 +31,12 @@ def chat():
     tools = data.get('tools', None)
     model = data.get('model', None)
 
-    result = mechlmm_core.chat(question, tools, base_img, schema, tag, model)
+    result, return_tag, result_type = mechlmm_core.chat(question, tools, base_img, schema, tag, model)
 
-    return jsonify(result)
+    return jsonify({"result": result, 
+                    "tag": return_tag,
+                    "type": result_type
+                    })
 
 def main():
     app.run(host='0.0.0.0', port=5001)

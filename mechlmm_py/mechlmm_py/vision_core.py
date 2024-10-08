@@ -1,6 +1,5 @@
 import cv2
 
-from .mechlmm_core import MechLMMCore
 from .postgres_core import PostgresCore
 from .debug_core import DebugCore
 from . import utilities_core
@@ -12,7 +11,6 @@ from datetime import datetime
 
 class VisionCore:
     def __init__(self, _data_path = "../output"):
-        self.mechlmm_core = MechLMMCore()
         self.postgres_core = PostgresCore()
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
@@ -47,9 +45,9 @@ class VisionCore:
             
         json_object, _tag = self.image_context_analyzer(_frame)
         
-        self.debug_core.log_key(json_object[0]["args"])
+        self.debug_core.log_key(json_object)
         try:
-            self.frame_context_list.append(json_object[0]["args"]["description"])
+            self.frame_context_list.append(json_object["description"])
 
             self.debug_core.log_key("------ video check-----")
             self.debug_core.log_info(self.current_video_filename)
@@ -58,18 +56,24 @@ class VisionCore:
 
             if(_tag["filename"] != self.current_video_filename):
                 question = "The following content is a list of summary of continues frame from live view, return the summary of what happen in a short paragraph : \n\n" + '\n'.join(self.frame_context_list)
-                _result, tag = self.mechlmm_core.chat_text(question, None, _tag)
+
+                query = {
+                    'question': question,
+                    'tag': _tag,
+                }
+
+                query_result = utilities_core.rest_post_request(query)
 
                 self.debug_core.log_key("------ video summary-----")
-                self.debug_core.log_info(_result)
-                self.postgres_core.post_video_summary_db(tag["filename"], 
-                                            _result
+                self.debug_core.log_info(query_result['result'])
+                self.postgres_core.post_video_summary_db(query_result['tag']["filename"], 
+                                            query_result['result']
                                             )
                 self.frame_context_list = []
 
 
             # Object DB
-            for object in json_object[0]["args"]["objects"]:
+            for object in json_object["objects"]:
                 final_features = None
                 final_reference_videos = []
                 final_summary = ""
@@ -107,12 +111,23 @@ class VisionCore:
         tag = {"filename": self.current_video_filename}
         question = "analysis this image, and give me a detail break down of list of objects in the image"
 
-        _result, _tag = self.mechlmm_core.chat_img(question, 
-                                             image_url, 
-                                             self.mechlmm_core.basemodel_to_json(lmm_function_pool.ObjectList), 
-                                             tag)
+        # _result, _tag = self.mechlmm_core.chat_img(question, 
+        #                                      image_url, 
+        #                                      self.mechlmm_core.basemodel_to_json(lmm_function_pool.ObjectList), 
+        #                                      tag)
+        
+        query = {
+            "question": question,
+            "schema": utilities_core.basemodel_to_json(lmm_function_pool.ObjectList),
+            "base_img": [image_url],
+            "tag": tag
+        }
+        query_result = utilities_core.rest_post_request(query)
+        
+        self.debug_core.log_info("------ image_context_analyzer ------")
+        self.debug_core.log_info(query_result)
 
-        return _result, _tag
+        return query_result["result"], query_result["tag"]
     
     def video_analyzer(self, _db_reference_videos, _elapsed_time):
         _current_time = int(time.time())
@@ -143,25 +158,39 @@ class VisionCore:
             self.debug_core.log_info(_db_features)
             self.debug_core.log_info(_current_features)
 
-            features_summary, _ = self.mechlmm_core.chat_text(
-                                        f"""
-                                        Merge items with similar meanings from the provided lists below. 
-                                        Consider features with synonymous or overlapping meanings as duplicates and merge them. 
-                                        Remove any redundant entries to ensure that each feature in 
-                                        the final list is unique and represents distinct information.
-                                        {_db_features + _current_features}
-                                        """,
-                                        self.mechlmm_core.basemodel_to_json(lmm_function_pool.ListItems)
-                                        )
+            question =  f"""
+                        Merge items with similar meanings from the provided lists below. 
+                        Consider features with synonymous or overlapping meanings as duplicates and merge them. 
+                        Remove any redundant entries to ensure that each feature in 
+                        the final list is unique and represents distinct information.
+                        {_db_features + _current_features}
+                        """
+            # features_summary, _ = self.mechlmm_core.chat_text(
+            #                             f"""
+            #                             Merge items with similar meanings from the provided lists below. 
+            #                             Consider features with synonymous or overlapping meanings as duplicates and merge them. 
+            #                             Remove any redundant entries to ensure that each feature in 
+            #                             the final list is unique and represents distinct information.
+            #                             {_db_features + _current_features}
+            #                             """,
+            #                             self.mechlmm_core.basemodel_to_json(lmm_function_pool.ListItems)
+            #                             )
             
+            query = {
+                "question": question,
+                "schema": utilities_core.basemodel_to_json(lmm_function_pool.ListItems),
+            }
+            query_result = utilities_core.rest_post_request(query)
+            
+            print(query_result)
             self.debug_core.log_key("------ features mege output from llm ------")
-            self.debug_core.log_key(features_summary[0]["args"]["items"])
+            self.debug_core.log_key(query_result["result"]["items"])
             
             # output_features = utilities_core.llm_output_list_cleaner(features_summary)
             # self.debug_core.log_info("------ features after clean up ------")
             # self.debug_core.log_key(output_features)
 
-            return features_summary[0]["args"]["items"]
+            return query_result["result"]["items"]
         
         else:
             return _current_features
