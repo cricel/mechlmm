@@ -110,11 +110,6 @@ class VisionCore:
 
         tag = {"filename": self.current_video_filename}
         question = "analysis this image, and give me a detail break down of list of objects in the image"
-
-        # _result, _tag = self.mechlmm_core.chat_img(question, 
-        #                                      image_url, 
-        #                                      self.mechlmm_core.basemodel_to_json(lmm_function_pool.ObjectList), 
-        #                                      tag)
         
         query = {
             "question": question,
@@ -165,31 +160,15 @@ class VisionCore:
                         the final list is unique and represents distinct information.
                         {_db_features + _current_features}
                         """
-            # features_summary, _ = self.mechlmm_core.chat_text(
-            #                             f"""
-            #                             Merge items with similar meanings from the provided lists below. 
-            #                             Consider features with synonymous or overlapping meanings as duplicates and merge them. 
-            #                             Remove any redundant entries to ensure that each feature in 
-            #                             the final list is unique and represents distinct information.
-            #                             {_db_features + _current_features}
-            #                             """,
-            #                             self.mechlmm_core.basemodel_to_json(lmm_function_pool.ListItems)
-            #                             )
-            
             query = {
                 "question": question,
                 "schema": utilities_core.basemodel_to_json(lmm_function_pool.ListItems),
             }
             query_result = utilities_core.rest_post_request(query)
             
-            print(query_result)
             self.debug_core.log_key("------ features mege output from llm ------")
             self.debug_core.log_key(query_result["result"]["items"])
             
-            # output_features = utilities_core.llm_output_list_cleaner(features_summary)
-            # self.debug_core.log_info("------ features after clean up ------")
-            # self.debug_core.log_key(output_features)
-
             return query_result["result"]["items"]
         
         else:
