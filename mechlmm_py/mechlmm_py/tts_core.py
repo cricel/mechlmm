@@ -1,13 +1,23 @@
-from elevenlabs import play
-from elevenlabs.client import ElevenLabs
+from gtts import gTTS
+import os
+import playsound
 
-client = ElevenLabs(
-  api_key="sk_37b0037ad75e885f53948b5dce19a249b032984e2a9e9190", # Defaults to ELEVEN_API_KEY
-)
+class GTTS_Core():
+    # def __init__(self):
+        
+    def tts_play(self, input_text):
+        # Initialize the gTTS object with the text
+        tts = gTTS(input_text)
 
-audio = client.generate(
-  text="Hello! 你好!",
-  voice="Rachel",
-  model="eleven_multilingual_v2"
-)
-play(audio)
+        # Save the generated speech as an audio file
+        tts.save("output.mp3")
+
+        # Play the generated speech directly through speakers
+        playsound.playsound("output.mp3")
+
+        # Clean up by deleting the temporary audio file
+        os.remove("output.mp3")
+
+if __name__ == '__main__':
+    tts_core = GTTS_Core()
+    tts_core.tts_play("hello this is a test speech I am teaching CS3 lab and we gonna cover the topic of dynamic array with C++ today")

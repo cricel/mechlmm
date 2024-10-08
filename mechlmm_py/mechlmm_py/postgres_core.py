@@ -28,6 +28,12 @@ class PostgresCore:
                     DROP TABLE IF EXISTS video_summaries;
                 """
             )
+            
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS data_log;
+                """
+            )
 
             self.db_conn.commit()
 
@@ -55,7 +61,29 @@ class PostgresCore:
                 """
             )
 
+            #### Robot Static Data
+
+            self.db_cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS data_log (
+                    id SERIAL PRIMARY KEY,
+                    timestamp TIMESTAMPTZ NOT NULL,
+                    topic_name VARCHAR(255) NOT NULL,
+                    data TEXT NOT NULL
+                );
+                """
+            )
+
             self.db_conn.commit()
+
+    def post_data_log_db(self, _timestamp, _topic_name, _data):
+        insert_query = """
+            INSERT INTO data_log (timestamp, topic_name, data) 
+            VALUES (%s, %s, %s)
+        """ 
+
+        self.db_cur.execute(insert_query, (_timestamp, _topic_name, _data))
+        self.db_conn.commit()
 
     def post_objects_map_db(self, _name, _features, _reference_videos, _summary):
         insert_query = """
