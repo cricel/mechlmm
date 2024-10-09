@@ -1,4 +1,5 @@
 from .mechlmm_core import MechLMMCore
+from mechlmm_py import PostgresCore
 
 from flask import Flask, request, jsonify, render_template
 
@@ -8,6 +9,7 @@ load_dotenv()
 app = Flask(__name__)
 
 mechlmm_core = MechLMMCore()
+postgres_core = PostgresCore(False, "localhost")
 
 @app.route('/')
 def root():
@@ -37,6 +39,12 @@ def chat():
                     "tag": return_tag,
                     "type": result_type
                     })
+
+@app.route('/database/get_table/<table_name>', methods=['GET'])
+def get_table_data(table_name):
+    result = postgres_core.get_table(table_name)
+
+    return jsonify(result)
 
 def main():
     app.run(host='0.0.0.0', port=5001)

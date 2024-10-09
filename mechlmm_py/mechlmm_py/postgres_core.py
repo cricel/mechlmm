@@ -3,8 +3,8 @@ import os
 import json
 
 class PostgresCore:
-    def __init__(self, reset = True):
-        self.init_db(reset)
+    def __init__(self, reset = True, host = "192.168.1.134"):
+        self.init_db(reset, host)
 
         testdata = [
             {
@@ -59,10 +59,10 @@ class PostgresCore:
 
         # print(self.get_test_data("chair"))
 
-    def init_db(self, _reset):
+    def init_db(self, _reset, _host):
         self.db_conn = psycopg2.connect(
             # host = "localhost",
-            host = "192.168.1.134",
+            host = _host,
             database = "mechlmm",
             user = "postgres",
             password = "qwepoi123",
@@ -164,8 +164,21 @@ class PostgresCore:
             FROM objects_list 
             WHERE name = %s
         """
+
         self.db_cur.execute(select_query, (_name,))
         result = self.db_cur.fetchone()
+
+        if result:
+            col_names = [desc[0] for desc in self.db_cur.description]
+            return dict(zip(col_names, result))
+        else:
+            return None
+
+    def get_table(self, _table_name):
+        select_query = f"SELECT * FROM {_table_name}"
+
+        self.db_cur.execute(select_query)
+        result = self.db_cur.fetchall()
 
         if result:
             col_names = [desc[0] for desc in self.db_cur.description]
