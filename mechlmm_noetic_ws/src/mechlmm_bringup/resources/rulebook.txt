@@ -1,0 +1,56 @@
+Battery Levels:
+
+    If the battery level is below 30%, stop the current operation and return to the charging station.
+    If the battery level is between 50% and 30%, issue a warning to the operator to charge soon.
+    If the battery level is between 70% and 50%, monitor closely and prepare for charging after completing the current task.
+    If the battery level is 100%, ensure no overcharging occurs by switching to standby mode.
+
+Sensor Data:
+
+    If the odometer data becomes noisy or inconsistent, stop the robot and inspect the encoder installation.
+    If the temperature sensor exceeds a predefined threshold, pause the operation and notify the operator for system cooling.
+    If the gyroscope sensor data fluctuates abnormally, recalibrate the sensor or restart the robot system.
+    If proximity sensors detect an obstacle within 10 cm, stop the robot immediately to avoid a collision.
+    If the LiDAR sensor loses track of the environment, slow down and activate backup navigation systems.
+
+Speed Control:
+
+    If the robot speed exceeds 3 m/s, issue an alert and slow down to a safer speed.
+    If the speed drops below 0.5 m/s during an active task, check for obstructions or mechanical issues.
+    If the robot is traversing over rough terrain, reduce speed by 50% for safety and stability.
+    If the robot is approaching a tight corner, automatically reduce speed by 25%.
+
+Navigation & Pathfinding:
+
+    If the robot is off its predefined path by more than 5 cm, pause and recalculate the route.
+    If the robot detects it’s in a restricted area, stop immediately and return to the authorized path.
+    If the GPS signal is lost for more than 10 seconds, initiate a stationary hold until the signal is regained.
+    If the robot is moving backwards at speeds above 1 m/s, reduce speed or halt to avoid collisions.
+
+Mechanical & Structural Integrity:
+
+    If the robot’s arm or tool reaches its maximum load capacity, issue a warning and stop the operation to avoid overload.
+    If vibrations exceed a predefined safe threshold, halt the robot and inspect for mechanical faults.
+    If the robot's wheel friction exceeds a certain value, check for debris or surface issues and clean if necessary.
+    If motor temperature exceeds safe limits, stop the robot and allow the system to cool down before resuming operations.
+
+Communication & Operator Interaction:
+
+    If communication with the operator is lost for more than 30 seconds, return to the base station automatically.
+    If the operator sends a manual override command, halt all automatic functions and switch to manual control mode.
+    If the robot receives a shutdown command, stop all operations safely and power down the system gradually.
+    If the robot detects a low signal strength in Wi-Fi or Bluetooth, initiate data backup and notify the operator of connectivity issues.
+
+Task-Specific Rules:
+
+    If the robot’s tool encounters unexpected resistance, stop the task and check for blockages.
+    If the robot’s camera detects inconsistent object recognition for more than 5 seconds, recalibrate the vision system.
+    If a task exceeds the maximum allowed time, pause the operation and prompt the operator for further instructions.
+    If a payload weight sensor indicates an imbalance, pause the robot and request manual correction.
+
+Emergency Protocols:
+
+    If an emergency stop button is pressed, immediately halt all operations regardless of the current task.
+    If the robot tilts more than 20 degrees from its upright position, stop and trigger an emergency balance protocol.
+    If fire or smoke is detected by sensors, initiate a complete system shutdown and send an emergency alert to the operator.
+    If the robot's internal diagnostics detect a critical error in the system software, initiate a safe shutdown procedure.

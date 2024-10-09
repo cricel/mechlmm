@@ -145,5 +145,19 @@ def rest_post_request(_data, _server_url = 'http://192.168.1.134:5001/mechlmm/ch
 def basemodel_to_json(_basemodel):
     return convert_to_openai_function(_basemodel)
 
+def ros_message_to_dict(_msg):
+    if hasattr(_msg, '__slots__'):
+        output = {}
+        for field_name in _msg.__slots__:
+            field_value = getattr(_msg, field_name)
+            output[field_name] = ros_message_to_dict(field_value)
+        return output
+    
+    elif isinstance(_msg, list):
+        return [ros_message_to_dict(item) for item in _msg]
+    
+    else:
+        return _msg
+    
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")

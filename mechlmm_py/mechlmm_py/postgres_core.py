@@ -9,8 +9,8 @@ class PostgresCore:
         self.db_conn = psycopg2.connect(
             host = "localhost",
             database = "mechlmm",
-            user = os.getenv('POSTGRESQL_USER'),
-            password = os.getenv('POSTGRESQL_PASSWORD'),
+            user = "postgres",
+            password = "qwepoi123",
             port = 5432
         )
 
@@ -197,4 +197,4 @@ class PostgresCore:
 
 if __name__ == "__main__":
     postgres_core = PostgresCore()
-    postgres_core.post_objects_map_db("test_key", ["test", "test2"], [["test", "0", "30"], ["tes2t", "10", "40"]])
+    # postgres_core.post_objects_map_db("test_key", ["test", "test2"], [["test", "0", "30"], ["tes2t", "10", "40"]])
