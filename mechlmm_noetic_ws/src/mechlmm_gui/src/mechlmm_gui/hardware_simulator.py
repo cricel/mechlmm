@@ -40,7 +40,6 @@ class HardwareSimulator(Plugin):
         self.flash_timer.start()
 
     def timer_callback(self):
-        print("asas")
         battery_value = self.battery_value_slider.value()
 
         self.battery_value_slider.setValue(battery_value - 1)

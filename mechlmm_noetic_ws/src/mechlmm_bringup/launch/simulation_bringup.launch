@@ -58,14 +58,4 @@
         <arg name="model" value="$(arg model)" />
         <arg name="move_forward_only" value="$(arg move_forward_only)"/>
     </include>
-
-    <!-- Custom -->
-    <node name="mechlmm_gui" pkg="mechlmm_gui" type="mechlmm_gui" />
-
-    <!-- Custom -->
-    <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
-        args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
-    </node>
-
-    <node name="keyboard_input" pkg="mechlmm_bringup" type="keyboard_ros_listener.py" />
 </launch>

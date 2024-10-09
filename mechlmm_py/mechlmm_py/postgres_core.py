@@ -1,9 +1,63 @@
 import psycopg2
 import os
+import json
 
 class PostgresCore:
     def __init__(self, reset = True):
         self.init_db(reset)
+
+        testdata = [
+            {
+                "name": "coke",
+                "data": {
+                    "position": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "chair",
+                "data": {
+                    "position": {
+                        "x": 1.2,
+                        "y": 0.7,
+                        "z": 0.2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "table",
+                "data": {
+                    "position": {
+                        "x": 1.2,
+                        "y": 0.7,
+                        "z": 0.2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            }
+        ]
+        
+        for obj in testdata:
+            self.post_test_data_db(obj["name"], json.dumps(obj["data"]))
+
+        # print(self.get_test_data("chair"))
 
     def init_db(self, _reset):
         self.db_conn = psycopg2.connect(
@@ -86,7 +140,7 @@ class PostgresCore:
                 CREATE TABLE IF NOT EXISTS objects_list (
                     id SERIAL PRIMARY KEY,
                     name VARCHAR(100) NOT NULL,
-                    pose VARCHAR(100) NOT NULL
+                    pose TEXT NOT NULL
                 );
                 """
             )
@@ -103,6 +157,20 @@ class PostgresCore:
         self.db_cur.execute(insert_query, (_name, _pose))
         self.db_conn.commit()
 
+    def get_test_data(self, _name):
+        select_query = """
+            SELECT * 
+            FROM objects_list 
+            WHERE name = %s
+        """
+        self.db_cur.execute(select_query, (_name,))
+        result = self.db_cur.fetchone()
+
+        if result:
+            col_names = [desc[0] for desc in self.db_cur.description]
+            return dict(zip(col_names, result))
+        else:
+            return None
 
     def post_data_log_db(self, _timestamp, _topic_name, _data):
         insert_query = """
@@ -225,15 +293,56 @@ class PostgresCore:
 
 if __name__ == "__main__":
     postgres_core = PostgresCore()
-    postgres_core.post_test_data_db("coke", """
-                                    {"position": {"x": 1, "y": 1, "z": 2}, "angular": {"x": 1, "y": 1, "z": 2}}
-                                    """)
-    postgres_core.post_test_data_db("chair", """
-                                    {"position": {"x": 2, "y": 0.5, "z": 1}, "angular": {"x": 0.1, "y": 1.2, "z": 2.1}}
-                                    """)
-    postgres_core.post_test_data_db("table", """
-                                    {"position": {"x": 1.3, "y": 0.5, "z": 1}, "angular": {"x": 0.2, "y": 1.2, "z": 2.1}}
-                                    """)
+    # testdata = [
+    #     {
+    #         "name": "coke",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     },
+    #     {
+    #         "name": "chair",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1.2,
+    #                 "y": 0.7,
+    #                 "z": 0.2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     },
+    #     {
+    #         "name": "table",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1.2,
+    #                 "y": 0.7,
+    #                 "z": 0.2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     }
+    # ]
+    
+    # for obj in testdata:
+    #     postgres_core.post_test_data_db(obj["name"], json.dumps(obj["data"]))
     
 
 

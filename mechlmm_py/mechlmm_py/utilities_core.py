@@ -93,7 +93,6 @@ def query_video_frame(requested_time):
     
     return frame
 
-
 def frame_to_jpg(frame, filename):
     cv2.imwrite(os.path.join(IMAGES_OUTPUT_PATH, filename), frame)
     debug_core.log_info(f"Frame saved as {os.path.join(IMAGES_OUTPUT_PATH, filename)}")
