@@ -3,46 +3,35 @@
 import requests
 import speech_recognition as sr
 import pyttsx3 
-from mechlmm_py import TTS_Core
+from mechlmm_py import TTS_Core, DebugCore, utilities_core
 
 tts_core = TTS_Core()
-url = 'http://192.168.1.134:5001/mechlmm/chat'
+debug_core = DebugCore()
 
 while(1):    
     try:
-        print ("say something") 
         r = sr.Recognizer() 
-        print ("00") 
         with sr.Microphone() as source2:
-            print ("11") 
+            print("00")
             r.adjust_for_ambient_noise(source2, duration=0.2)
-            print ("22") 
+            print("01")
             audio2 = r.listen(source2)
-            print ("33") 
+            print("11")
             _stt_result = r.recognize_google(audio2)
             _stt_result = _stt_result.lower()
- 
-            print("Did you say ", _stt_result)
-
+            print("22")
             data = {
                 'question': _stt_result,
                 # 'schema': dict_schema,
                 # 'tag': 'value2',
                 # 'base_img': [image_url, image_url_1],
                 # 'tools': [tool_schema_1, tool_schema_2],
-                'model': "claude"
+                # 'model': "claude"
             }
 
-            response = requests.post(url, json=data)
+            result = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat/qa')
 
-            if response.status_code == 200:
-                _result = response.json()
-                print('Success: \n', _result)
-                
-                tts_core.tts_play(_result["result"])
-
-            else:
-                print('Failed:', response.status_code, response.text)
+            tts_core.tts_play(result["result"])
 
             
     except sr.RequestError as e:
