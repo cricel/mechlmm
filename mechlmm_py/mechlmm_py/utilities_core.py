@@ -157,6 +157,19 @@ def ros_message_to_dict(_msg):
     
     else:
         return _msg
-    
+
+def find_video_in_range(_video_data, _time_data):
+        matching_video_list = []
+        start_time, end_time = _time_data
+        
+        for video in _video_data:
+            video_start_time = video[2]
+            video_end_time = video[3]
+            
+            if video_start_time <= end_time and video_end_time >= start_time:
+                matching_video_list.append(video[1])
+        
+        return matching_video_list
+
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")

@@ -40,6 +40,32 @@ def chat():
                     "type": result_type
                     })
 
+@app.route('/mechlmm/chat/qa', methods=['POST'])
+def chat_qa():
+    data = request.json
+    
+    if not data or 'question' not in data:
+        return jsonify({'error': 'Invalid Data'}), 400
+    
+    question = data['question']
+
+    result = mechlmm_core.chat_knowledge(question)
+
+    return jsonify({"result": result})
+
+@app.route('/mechlmm/chat/data', methods=['POST'])
+def chat_data():
+    data = request.json
+    
+    if not data or 'question' not in data:
+        return jsonify({'error': 'Invalid Data'}), 400
+    
+    question = data['question']
+
+    result = mechlmm_core.chat_datalog(question)
+
+    return jsonify({"result": result})
+
 @app.route('/database/get_table/<table_name>', methods=['GET'])
 def get_table_data(table_name):
     result = postgres_core.get_table(table_name)
