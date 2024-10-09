@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 class navigation(BaseModel):
-    """Navigate to the target location"""
+    """Navigate to the target location, it only work when the distance between 2 object is bigger then 1"""
 
     target_name: str = Field(..., description="the name of the target location")
 

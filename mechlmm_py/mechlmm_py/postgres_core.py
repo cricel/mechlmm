@@ -35,6 +35,12 @@ class PostgresCore:
                 """
             )
 
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS objects_list;
+                """
+            )
+
             self.db_conn.commit()
 
             self.db_cur.execute(
@@ -74,7 +80,29 @@ class PostgresCore:
                 """
             )
 
+            #### Testing Database
+            self.db_cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS objects_list (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    pose VARCHAR(100) NOT NULL
+                );
+                """
+            )
+
             self.db_conn.commit()
+
+
+    def post_test_data_db(self, _name, _pose):
+        insert_query = """
+            INSERT INTO objects_list (name, pose) 
+            VALUES (%s, %s)
+        """ 
+
+        self.db_cur.execute(insert_query, (_name, _pose))
+        self.db_conn.commit()
+
 
     def post_data_log_db(self, _timestamp, _topic_name, _data):
         insert_query = """
@@ -197,4 +225,16 @@ class PostgresCore:
 
 if __name__ == "__main__":
     postgres_core = PostgresCore()
+    postgres_core.post_test_data_db("coke", """
+                                    {"position": {"x": 1, "y": 1, "z": 2}, "angular": {"x": 1, "y": 1, "z": 2}}
+                                    """)
+    postgres_core.post_test_data_db("chair", """
+                                    {"position": {"x": 2, "y": 0.5, "z": 1}, "angular": {"x": 0.1, "y": 1.2, "z": 2.1}}
+                                    """)
+    postgres_core.post_test_data_db("table", """
+                                    {"position": {"x": 1.3, "y": 0.5, "z": 1}, "angular": {"x": 0.2, "y": 1.2, "z": 2.1}}
+                                    """)
+    
+
+
     # postgres_core.post_objects_map_db("test_key", ["test", "test2"], [["test", "0", "30"], ["tes2t", "10", "40"]])
