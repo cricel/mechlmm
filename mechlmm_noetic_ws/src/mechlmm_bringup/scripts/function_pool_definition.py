@@ -128,8 +128,8 @@ class FunctionPoolDefinition:
             self.moveit_group.stop()
             self.moveit_group.clear_pose_targets()
 
-    def navigate(self, _pose):
-        if(_pose)
+    # def navigate(self, _pose):
+    #     if(_pose)
 
     def trigger_gripper(self, _args):
         self.debug_log.log_flash(f"===> trigger_gripper: {_args}")

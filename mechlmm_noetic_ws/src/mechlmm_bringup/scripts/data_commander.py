@@ -2,33 +2,49 @@
 
 import rospy
 import tf
+from cv_bridge import CvBridge, CvBridgeError
 
-from std_msgs.msg import String
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import String, Float32MultiArray
 from geometry_msgs.msg import Twist, Pose
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Image
 
 import sys
 import time
 from datetime import datetime
 import json
+import threading
 
-from mechlmm_py import utilities_core, PostgresCore
+from mechlmm_py import utilities_core, PostgresCore, VisionCore, DebugCore
 
 class DataCommander:
     def __init__(self):
         rospy.init_node('data_commander', anonymous=True)
 
+        self.vision_core = VisionCore()
+        self.debug_core = DebugCore()
+        self.debug_core.verbose = 3
         self.postgres_core = PostgresCore()
 
         self.last_saved_time = time.time()
         self.data_collection_duration = 0.2
 
+        self.bridge = CvBridge()
+        
         self.cmd_sub = rospy.Subscriber("/cmd_vel",Twist, self.cmd_callback)
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.base_image_callback)
+
         rospy.Timer(rospy.Duration(1.0), self.timer_callback)
         
         self.tf_listener = tf.TransformListener()
+
+        self.lock = threading.Lock()
+        self.processing_thread = threading.Thread(target=self.process_frames)
+        self.processing_thread.daemon = True
+        self.processing_thread.start()
+
+        self.lmm_result = None
         
     def data_speed_gate(self):
         current_time = time.time()
@@ -96,6 +112,34 @@ class DataCommander:
                                             json_str
                                             )
 
+    def base_image_callback(self, data):
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+
+            self.vision_core.frame_height, self.vision_core.frame_width, channels = cv_image.shape
+
+            self.vision_core.video_saver(cv_image)
+
+            with self.lock:
+                self.latest_frame = cv_image.copy()
+
+        except CvBridgeError as e:
+            print(e)
+
+        self.base_cam = cv_image
+
+    def process_frames(self):
+        while True:
+            with self.lock:
+                if hasattr(self, 'latest_frame'):
+                    frame = self.latest_frame
+                else:
+                    frame = None
+
+            if frame is not None:
+                self.lmm_result = self.vision_core.frame_analyzer(frame)
+            
+            time.sleep(0.1)
 
     def run(self):
         rospy.spin()

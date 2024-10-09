@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
 import sys
+import time
 import rospy
 import cv2
+
+import threading
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -13,12 +16,16 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 import requests
 
-from mechlmm_py import utilities_core, lmm_function_pool
+from mechlmm_py import utilities_core, lmm_function_pool, VisionCore, DebugCore
 import function_pool_lmm_declaration
 from function_pool_definition import FunctionPoolDefinition
 
 class image_converter:
     def __init__(self):
+        self.vision_core = VisionCore()
+        self.debug_core = DebugCore()
+        self.debug_core.verbose = 3
+
         self.function_pool_definition = FunctionPoolDefinition()
 
         self.bridge = CvBridge()
@@ -43,8 +50,15 @@ class image_converter:
             "trigger_gripper": self.function_pool_definition.trigger_gripper,
         }
 
+        self.lock = threading.Lock()
+        self.processing_thread = threading.Thread(target=self.process_frames)
+        self.processing_thread.daemon = True
+        self.processing_thread.start()
+
+        self.lmm_result = None
+        
     def timer_callback(self, msg):
-        self.llm_chat_image()
+        # self.llm_chat_image()
         pass
 
     def llm_chat_image(self):
@@ -118,11 +132,31 @@ class image_converter:
     def base_callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+
+            self.vision_core.frame_height, self.vision_core.frame_width, channels = cv_image.shape
+
+            self.vision_core.video_saver(cv_image)
+
+            with self.lock:
+                self.latest_frame = cv_image.copy()
+
         except CvBridgeError as e:
             print(e)
 
         self.base_cam = cv_image
 
+    def process_frames(self):
+        while True:
+            with self.lock:
+                if hasattr(self, 'latest_frame'):
+                    frame = self.latest_frame
+                else:
+                    frame = None
+
+            if frame is not None:
+                self.lmm_result = self.vision_core.frame_analyzer(frame)
+            
+            time.sleep(0.1)
 
 def main(args):
     rospy.init_node('image_converter', anonymous=True)

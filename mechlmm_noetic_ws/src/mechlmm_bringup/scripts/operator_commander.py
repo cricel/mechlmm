@@ -1,18 +1,24 @@
+#!/usr/bin/env python
+
 import requests
 import speech_recognition as sr
 import pyttsx3 
-from mechlmm_py import GTTS_Core
+from mechlmm_py import TTS_Core
 
-tts_core = GTTS_Core()
+tts_core = TTS_Core()
 url = 'http://192.168.1.134:5001/mechlmm/chat'
 
 while(1):    
     try:
         print ("say something") 
         r = sr.Recognizer() 
+        print ("00") 
         with sr.Microphone() as source2:
+            print ("11") 
             r.adjust_for_ambient_noise(source2, duration=0.2)
+            print ("22") 
             audio2 = r.listen(source2)
+            print ("33") 
             _stt_result = r.recognize_google(audio2)
             _stt_result = _stt_result.lower()
  
@@ -33,7 +39,7 @@ while(1):
                 _result = response.json()
                 print('Success: \n', _result)
                 
-                tts_core.tts_play(_result)
+                tts_core.tts_play(_result["result"])
 
             else:
                 print('Failed:', response.status_code, response.text)

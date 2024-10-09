@@ -61,7 +61,8 @@ class PostgresCore:
 
     def init_db(self, _reset):
         self.db_conn = psycopg2.connect(
-            host = "localhost",
+            # host = "localhost",
+            host = "192.168.1.134",
             database = "mechlmm",
             user = "postgres",
             password = "qwepoi123",

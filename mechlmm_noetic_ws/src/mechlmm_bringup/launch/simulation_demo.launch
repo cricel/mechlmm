@@ -62,7 +62,8 @@
     <!-- Custom -->
     <node name="mechlmm_gui" pkg="mechlmm_gui" type="mechlmm_gui" />
 
-    <!-- Custom -->
+    <node name="data_commander" pkg="mechlmm_bringup" type="data_commander.py" />
+    
     <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
         args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
     </node>
