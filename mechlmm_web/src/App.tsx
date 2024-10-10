@@ -1,28 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TableData, ApiResponse } from './types';
+
+interface ApiResponse {
+  data: { [key: string]: any }[]; // A more generic structure to accommodate dynamic data
+}
 
 const App: React.FC = () => {
-  const [tableData, setTableData] = useState<{ [key: string]: TableData }>({});
-  const tableNames: string[] = ['objects_map']; // Table name
+  const [tableData, setTableData] = useState<{ [key: string]: { [key: string]: any }[] }>({});
+  const tableNames: string[] = ['objects_map', 'data_log']; // List of table names you need to render
 
   useEffect(() => {
     const fetchTableData = async () => {
-      const data: { [key: string]: TableData } = {};
-      for (let table of tableNames) {
+      const fetchedData: { [key: string]: { [key: string]: any }[] } = {};
+      for (const table of tableNames) {
         try {
-          // Fetch data from updated API URL
           const response = await axios.get<ApiResponse>(`http://192.168.1.134:5001/database/get_table/${table}`);
-          data[table] = response.data;
+          fetchedData[table] = response.data;
         } catch (error) {
           console.error(`Error fetching data for ${table}`, error);
         }
       }
-      setTableData(data);
+      setTableData(fetchedData); // Update the state with the data for all tables
     };
 
-    fetchTableData();
-  }, []);
+    // Fetch data every 2 seconds
+    const intervalId = setInterval(fetchTableData, 2000);
+
+    // Cleanup the interval on component unmount
+    return () => clearInterval(intervalId);
+  }, [tableNames]);
 
   // Function to render nested arrays
   const renderNestedArray = (arr: any[]): JSX.Element => {
@@ -37,10 +43,11 @@ const App: React.FC = () => {
     );
   };
 
-  // Render the data in a table format
-  const renderTable = (obj: { [key: string]: any }): JSX.Element => {
-    const headers = Object.keys(obj); // Extract headers from object keys
-    const rows = Object.values(obj);  // Extract data from object values
+  // Dynamically render the table based on the data structure
+  const renderTable = (data: { [key: string]: any }[]): JSX.Element | null => {
+    if (!data || data.length === 0) return null; // Add check for empty or null data
+
+    const headers = Object.keys(data[0]); // Extract headers dynamically from the first object
 
     return (
       <table border={1} cellPadding={5} style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -52,14 +59,16 @@ const App: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            {rows.map((row, rowIndex) => (
-              <td key={rowIndex}>
-                {/* Render nested arrays properly */}
-                {Array.isArray(row) ? renderNestedArray(row) : row.toString()}
-              </td>
-            ))}
-          </tr>
+          {data.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {headers.map((header, cellIndex) => (
+                <td key={cellIndex}>
+                  {/* Render nested arrays or display the value */}
+                  {Array.isArray(row[header]) ? renderNestedArray(row[header]) : row[header]?.toString() || 'N/A'}
+                </td>
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     );
@@ -67,17 +76,14 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <h1>PostgreSQL Table Data</h1>
-      {tableNames.map((table) => (
-        <div key={table}>
+      <h1>DB Inspector</h1>
+      {tableNames.map((table, index) => (
+        <div key={index}>
           <h2>{table}</h2>
-          {tableData[table] ? (
-            <div>
-              {/* Render the object content in table format */}
-              {renderTable(tableData[table])}
-            </div>
+          {tableData[table] && tableData[table].length > 0 ? (
+            <div>{renderTable(tableData[table])}</div>
           ) : (
-            <p>Loading data...</p>
+            <p>Loading data for {table}...</p>
           )}
         </div>
       ))}
