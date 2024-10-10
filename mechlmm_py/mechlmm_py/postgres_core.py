@@ -174,7 +174,11 @@ class PostgresCore:
             return None
 
     def get_table(self, _table_name):
-        select_query = f"SELECT * FROM {_table_name}"
+        select_query = f"""
+        SELECT * FROM {_table_name}
+        ORDER BY id DESC
+        LIMIT 100
+        """
 
         self.db_cur.execute(select_query)
         result = self.db_cur.fetchall()
