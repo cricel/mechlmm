@@ -121,13 +121,18 @@ class MechLMMCore:
     def chat_datalog(self, _msg):
         self.debug_core.log_info("------ chat_datalog ------")
         db_item_list = self.postgres_core.get_table("data_log")
-        result, _, _ = self.chat(f"""
-                            {_msg}
 
-                            answer the question base on the data provided, keep the answer concise
+        query = f"""
+                    {_msg}
 
-                            {db_item_list}
-                           """)
+                    answer the question base on the data provided, keep the answer concise
+
+                    {db_item_list}
+                    """
+        result, _, _ = self.chat(
+            _question = query,
+            _model = "claude"
+        )
         
         return result
 
@@ -200,8 +205,10 @@ class MechLMMCore:
         self.debug_core.log_info(object_db_list)
 
         results, _, return_type = self.chat(f"""
-                                    given the information below, answer the question in summary if answer found, otherwise, simply return "None": "{_question}"
+                                    {_question}
 
+                                    make the answer concise
+                                    the information below serve as additional context information, no neccary have to use it
                                     List of object Info:
                                     {object_db_list}
                                     List of context info:
