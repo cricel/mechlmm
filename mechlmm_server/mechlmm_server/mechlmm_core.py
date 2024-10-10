@@ -38,6 +38,10 @@ class MechLMMCore:
 
         self.mechlmm_model = self.gemini_model
 
+        self.rulebook = ""
+        with open('/Users/cricel/Documents/GitHub/llm-smart-home/mechlmm_server/mechlmm_server/rulebook.txt', 'r') as file:
+            self.rulebook = file.read()
+
     def chat(self, _question, _tools = None, _base_imgs = None, _schema = None, _tag = None, _model = None):
         self.debug_core.log_info("------ llm chat calling ------")
 
@@ -127,6 +131,7 @@ class MechLMMCore:
 
                     answer the question base on the data provided, keep the answer concise
 
+                    {self.rulebook}
                     {db_item_list}
                     """
         result, _, _ = self.chat(
