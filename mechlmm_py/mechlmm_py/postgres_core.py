@@ -181,7 +181,8 @@ class PostgresCore:
 
         if result:
             col_names = [desc[0] for desc in self.db_cur.description]
-            return dict(zip(col_names, result))
+            result_dicts = [dict(zip(col_names, row)) for row in result]
+            return result_dicts
         else:
             return None
 

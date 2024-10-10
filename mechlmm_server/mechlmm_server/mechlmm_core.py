@@ -34,7 +34,7 @@ class MechLMMCore:
 
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
-        self.postgres_core = PostgresCore(False)
+        self.postgres_core = PostgresCore(False, "localhost")
 
         self.mechlmm_model = self.gemini_model
 
