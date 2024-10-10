@@ -69,11 +69,12 @@ class DataCommander:
                                             )
 
     def timer_callback(self, event):
-        print("timer ==>")
         # try:
-        if(not self.data_speed_gate("pose", 0.2)):
+        if(not self.data_speed_gate("pose", 1.0)):
             return
         
+        self.tf_listener.waitForTransform('map', 'base_link', rospy.Time(0), rospy.Duration(4.0))
+
         (trans, rot) = self.tf_listener.lookupTransform('map', 'base_link', rospy.Time(0))
 
         roll, pitch, yaw = tf.transformations.euler_from_quaternion(rot)
