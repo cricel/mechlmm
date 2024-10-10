@@ -76,7 +76,7 @@ class VisionCore:
             for object in json_object["objects"]:
                 final_features = None
                 final_reference_videos = []
-                final_summary = ""
+                # final_summary = ""
                 _db_record = self.postgres_core.get_objects_map_record_by_name_db(object["name"])
                 self.debug_core.log_key("------ start processing frame------")
                 self.debug_core.log_key(object["name"])
@@ -95,8 +95,8 @@ class VisionCore:
                 self.debug_core.log_key("------ before write to db ------")
                 self.debug_core.log_key(final_features)
                 self.debug_core.log_key(final_reference_videos)
-                self.debug_core.log_key(final_summary)
-                self.postgres_core.post_objects_map_db(object["name"], final_features, final_reference_videos, final_summary)
+                # self.debug_core.log_key(final_summary)
+                self.postgres_core.post_objects_map_db(object["name"], final_features, final_reference_videos)
 
         except Exception as e:
                     self.debug_core.log_warning("------ Error on Video Processing  ------")

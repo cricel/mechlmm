@@ -7,7 +7,7 @@ interface ApiResponse {
 
 const App: React.FC = () => {
   const [tableData, setTableData] = useState<{ [key: string]: { [key: string]: any }[] }>({});
-  const tableNames: string[] = ['objects_map', 'data_log']; // List of table names you need to render
+  const tableNames: string[] = ['objects_map', 'video_summaries', 'data_log']; // List of table names you need to render
 
   useEffect(() => {
     const fetchTableData = async () => {
@@ -76,7 +76,7 @@ const App: React.FC = () => {
 
   return (
     <div>
-      <h1>DB Inspector</h1>
+      <h1>MechLMM DB Inspector</h1>
       {tableNames.map((table, index) => (
         <div key={index}>
           <h2>{table}</h2>
