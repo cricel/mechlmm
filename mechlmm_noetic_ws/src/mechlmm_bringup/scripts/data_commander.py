@@ -2,6 +2,7 @@
 
 import rospy
 import tf
+# from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from cv_bridge import CvBridge, CvBridgeError
 
 from std_msgs.msg import String, Float32MultiArray
@@ -54,46 +55,45 @@ class DataCommander:
         return False
 
     def cmd_callback(self, _msg):
-        if(not self.data_speed_gate()):
-            return
+        # if(not self.data_speed_gate()):
+        #     return
 
         msg_dict = utilities_core.ros_message_to_dict(_msg)
         json_str = json.dumps(msg_dict)
         
         self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                            "robot_speed",
+                                            "robot_control_input",
                                             json_str
                                             )
 
     def timer_callback(self, event):
-        try:
-            (trans, rot) = self.tf_listener.lookupTransform('map', 'base_link', rospy.Time(0))
- 
-            roll, pitch, yaw = tf.transformations.quaternion_to_euler(rot)
-            msg_dict = {
-                "position_x": trans[0],
-                "position_y": trans[1],
-                "position_z": trans[2],
-                "rotation_x": roll,
-                "rotation_y": pitch,
-                "rotation_z": yaw,
-            }
+        print("timer ==>")
+        # try:
+        (trans, rot) = self.tf_listener.lookupTransform('map', 'base_link', rospy.Time(0))
 
-            msg_dict = utilities_core.ros_message_to_dict(msg_dict)
-            json_str = json.dumps(msg_dict)
-            
-            print(json_str)
-            self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                                "robot_pose",
-                                                json_str
-                                                )
-        except:
-            pass
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion(rot)
+        print("00")
+        msg_dict = {
+            "position_x": trans[0],
+            "position_y": trans[1],
+            "position_z": trans[2],
+            "rotation_x": roll,
+            "rotation_y": pitch,
+            "rotation_z": yaw,
+        }
+        json_str = json.dumps(msg_dict)
+        
+        print(json_str)
+        self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                            "robot_pose",
+                                            json_str
+                                            )
 
     def odom_callback(self, _msg):
-        if(not self.data_speed_gate()):
-            return
+        # if(not self.data_speed_gate()):
+        #     return
 
+        # print("odom ==>")
         msg_dict = utilities_core.ros_message_to_dict(_msg)
 
         msg_dict = {
@@ -107,10 +107,10 @@ class DataCommander:
 
         json_str = json.dumps(msg_dict)
         
-        self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                                            "robot_speed",
-                                            json_str
-                                            )
+        # self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        #                                     "robot_speed",
+        #                                     json_str
+        #                                     )
 
     def base_image_callback(self, data):
         try:
