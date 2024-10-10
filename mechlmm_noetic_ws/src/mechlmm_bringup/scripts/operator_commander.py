@@ -142,7 +142,7 @@ class MechLMMChatBot:
         #         """
         
         query = f"""
-                Given the information below, answer the question in summary if an answer is found, otherwise, simply return "None": "{_question}"
+                You are the robot, Given the information below, answer the question if it can be answered, otherwise, simply return "None": "{_question}"
 
                 List of object Info:
                 {object_db_list}
@@ -164,27 +164,47 @@ class MechLMMChatBot:
         self.debug_core.log_key("------ chat_text_knowledge result ------")
         self.debug_core.log_info(results["result"])
 
-        # # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
-        # video_detail_summary_list = []
-        # # print(type(results))
-        # if(results == "None"):
-        #     for video in video_list:
-        #         video_detail_summary_list.append(self.chat_video("../output/videos/" + video, _question))
+        # mechllm_core.chat_video("../output/videos/output_video_1727316267.mp4", "what color is the desk")
+        video_detail_summary_list = []
+        # print(type(results))
+        if ("None" in results["result"]):
+            for video in video_list:
+                video_detail_summary_list.append(self.chat_video("../output/videos/" + video, _question))
 
         
-        #     results, _ = self.chat_text(f"""
-        #                                 given the information below, answer the question in summary: "{_question}"
+            # results, _ = self.chat_text(f"""
+            #                             given the information below, answer the question in summary: "{_question}"
 
-        #                                 Detail context analyze:
-        #                                 {video_detail_summary_list}
-        #                                 List of context info:
-        #                                 {object_db_list}
-        #                                 {video_summary_list}
-        #                                 """
-        #                                 )
+            #                             Detail context analyze:
+            #                             {video_detail_summary_list}
+            #                             List of context info:
+            #                             {object_db_list}
+            #                             {video_summary_list}
+            #                             """
+            #                             )
             
-        #     self.debug_core.log_key("------ 2222 chat_text_knowledge result ------")
-        #     self.debug_core.log_info(results)
+            query = f"""
+                    given the information below, answer the question in summary: "{_question}"
+
+                    Detail context analyze:
+                    {video_detail_summary_list}
+                    List of context info:
+                    {object_db_list}
+                    {video_summary_list}
+                    """
+            
+            data = {
+                'question': query,
+                # 'schema': utilities_core.basemodel_to_json(lmm_function_pool.ListItems),
+                # 'tag': 'tag',
+                # 'base_img': [base_img_1, base_img_2],
+                # 'tools': [tools_1, tools_2],
+                # 'model': "claude"
+            }
+            results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+            
+            self.debug_core.log_key("------ 2222 chat_text_knowledge result ------")
+            self.debug_core.log_info(results)
         
 
         return results
@@ -222,23 +242,42 @@ class MechLMMChatBot:
                 (current_frame == end_frame)
             ):
 
-                base64_image = utilities_core.opencv_frame_to_base64(frame)
-                image_url = f"data:image/jpeg;base64,{base64_image}"
+                image_url = utilities_core.opencv_frame_to_base64(frame)
+                # base64_image = utilities_core.opencv_frame_to_base64(frame)
+                # image_url = f"data:image/jpeg;base64,{base64_image}"
                 
-                frame_summary, _ = self.chat_img(f"""
-                                                    answer the question if the question can be answered, otherwise, simply return "None"
+                # frame_summary, _ = self.chat_img(f"""
+                #                                     answer the question if the question can be answered, otherwise, simply return "None"
                                                     
-                                                    Question:
-                                                    {_question}
-                                                """,
-                                              image_url)
+                #                                     Question:
+                #                                     {_question}
+                #                                 """,
+                #                               image_url)
+                
+
+                query = f"""
+                            answer the question if the question can be answered, otherwise, simply return "None"
+                            
+                            Question:
+                            {_question}
+                        """
+                
+                data = {
+                    'question': query,
+                    # 'schema': utilities_core.basemodel_to_json(lmm_function_pool.ListItems),
+                    # 'tag': 'tag',
+                    'base_img': [image_url],
+                    # 'tools': [tools_1, tools_2],
+                    # 'model': "claude"
+                }
+                results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
 
                 self.debug_core.log_key("------ llm video single frame analyzer output ------")
                 self.debug_core.log_info(int(current_frame/fps))
-                self.debug_core.log_info(frame_summary.content)
+                self.debug_core.log_info(results["result"])
                 self.debug_core.log_key("^^^^^^^^^^^^^^ llm video single frame analyzer output ^^^^^^^^^^^^^^")
                 
-                conversion_list.append(frame_summary.content)
+                conversion_list.append(results["result"])
             
             current_frame += 1
         
@@ -246,22 +285,43 @@ class MechLMMChatBot:
 
         self.debug_core.log_key("^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^")
         print(conversion_list)
-        video_summary, _ = self.chat_text(
-            f"""
-                given the context below, answer the question in summary:
+        # video_summary, _ = self.chat_text(
+        #     f"""
+        #         given the context below, answer the question in summary:
                 
-                Question:
-                "{_question}"
+        #         Question:
+        #         "{_question}"
                 
-                Context:
-                {conversion_list}
-            """
-        )
+        #         Context:
+        #         {conversion_list}
+        #     """
+        # )
+
+        query = f"""
+                    given the context below, answer the question in summary:
+                    
+                    Question:
+                    "{_question}"
+                    
+                    Context:
+                    {conversion_list}
+                """
+        
+        data = {
+            'question': query,
+            # 'schema': utilities_core.basemodel_to_json(lmm_function_pool.ListItems),
+            # 'tag': 'tag',
+            # 'base_img': [base_img_1, base_img_2],
+            # 'tools': [tools_1, tools_2],
+            # 'model': "claude"
+        }
+        results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+
         self.debug_core.log_info("------ ------------------------- ------")
         self.debug_core.log_info("------ llm video analyzer output ------")
-        self.debug_core.log_info(video_summary)
+        self.debug_core.log_info(results["result"])
 
-        return video_summary
+        return results["result"]
 if __name__ == "__main__":
     bot = MechLMMChatBot()
     bot.run()
