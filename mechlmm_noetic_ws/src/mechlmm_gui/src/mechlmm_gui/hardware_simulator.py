@@ -10,6 +10,8 @@ from python_qt_binding.QtCore import QTimer
 from std_msgs.msg import String
 from std_msgs.msg import Int16
 
+from mechlmm_py import TTS_Core, utilities_core
+
 class HardwareSimulator(Plugin):
 
     def __init__(self, context):
@@ -20,6 +22,7 @@ class HardwareSimulator(Plugin):
 
         self._widget = QWidget()
         self._layout = QVBoxLayout()
+        self
 
         loadUi(ui_file, self._widget)
 
@@ -39,6 +42,9 @@ class HardwareSimulator(Plugin):
         self.flash_timer.timeout.connect(self.timer_callback)
         self.flash_timer.start()
 
+        self.tts_core = TTS_Core()
+        self.test_counter = 0
+
     def timer_callback(self):
         battery_value = self.battery_value_slider.value()
 
@@ -53,6 +59,21 @@ class HardwareSimulator(Plugin):
 
         if(battery_value < 30):
             self.battery_label.setStyleSheet("color: red;")
+            if (self.test_counter == 0):
+                self.test_counter = 1
+                query = f"""
+                    question': "you are the robot ai, tell me what to do if the data provided is abnormal, otherwise, saying everything is fine
+
+                    ["battery": {battery_value}]
+
+                    """
+                
+                data = {
+                    "question": query
+                }
+                response = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat/data')
+                self.tts_core.tts_play(response["result"])
+
         elif(battery_value < 50 and battery_value > 30):
             self.battery_label.setStyleSheet("color: yellow;")
         else:
