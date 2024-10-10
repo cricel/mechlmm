@@ -17,8 +17,8 @@ while(1):
             audio2 = r.listen(source2)
             _stt_result = r.recognize_google(audio2)
             _stt_result = _stt_result.lower()
-            debug_core.log_info(f"you said: {_stt_result}")
-            
+            debug_core.log_info(f"You Said:\n {_stt_result}")
+
             data = {
                 'question': _stt_result,
                 # 'schema': dict_schema,
@@ -29,6 +29,8 @@ while(1):
             }
 
             result = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat/qa')
+
+            debug_core.log_warning(f"MechLMM:\n {result}")
 
             tts_core.tts_play(result["result"])
 

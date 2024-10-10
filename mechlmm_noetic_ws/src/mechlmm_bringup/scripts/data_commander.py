@@ -27,7 +27,8 @@ class DataCommander:
         self.debug_core.verbose = 3
         self.postgres_core = PostgresCore()
 
-        self.last_saved_time = time.time()
+        # self.last_saved_time = time.time()
+        self.last_saved_time = {}
         self.data_collection_duration = 0.2
 
         self.bridge = CvBridge()
@@ -36,7 +37,7 @@ class DataCommander:
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
         self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.base_image_callback)
 
-        rospy.Timer(rospy.Duration(1.0), self.timer_callback)
+        rospy.Timer(rospy.Duration(0.2), self.timer_callback)
         
         self.tf_listener = tf.TransformListener()
 
@@ -47,16 +48,17 @@ class DataCommander:
 
         self.lmm_result = None
         
-    def data_speed_gate(self):
+    def data_speed_gate(self, _callback_name, _frequency):
         current_time = time.time()
-        if (current_time - self.last_saved_time >= self.data_collection_duration):
-            self.last_saved_time = current_time
+        last_time = self.last_saved_time.get(_callback_name, 0)
+        if (current_time - last_time >= _frequency):
+            self.last_saved_time[_callback_name] = current_time
             return True
         return False
-
+        
     def cmd_callback(self, _msg):
-        # if(not self.data_speed_gate()):
-        #     return
+        if(not self.data_speed_gate("cmd", 0.2)):
+            return
 
         msg_dict = utilities_core.ros_message_to_dict(_msg)
         json_str = json.dumps(msg_dict)
@@ -69,10 +71,12 @@ class DataCommander:
     def timer_callback(self, event):
         print("timer ==>")
         # try:
+        if(not self.data_speed_gate("pose", 0.2)):
+            return
+        
         (trans, rot) = self.tf_listener.lookupTransform('map', 'base_link', rospy.Time(0))
 
         roll, pitch, yaw = tf.transformations.euler_from_quaternion(rot)
-        print("00")
         msg_dict = {
             "position_x": trans[0],
             "position_y": trans[1],
@@ -90,10 +94,10 @@ class DataCommander:
                                             )
 
     def odom_callback(self, _msg):
-        # if(not self.data_speed_gate()):
-        #     return
+        if(not self.data_speed_gate("odom", 1.0)):
+            return
 
-        # print("odom ==>")
+        print("odom ==>")
         msg_dict = utilities_core.ros_message_to_dict(_msg)
 
         msg_dict = {
@@ -107,10 +111,10 @@ class DataCommander:
 
         json_str = json.dumps(msg_dict)
         
-        # self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        #                                     "robot_speed",
-        #                                     json_str
-        #                                     )
+        self.postgres_core.post_data_log_db(datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                                            "robot_speed",
+                                            json_str
+                                            )
 
     def base_image_callback(self, data):
         try:
