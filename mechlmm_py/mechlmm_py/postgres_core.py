@@ -1,16 +1,71 @@
 import psycopg2
 import os
+import json
 
 class PostgresCore:
-    def __init__(self, reset = True):
-        self.init_db(reset)
+    def __init__(self, reset = True, host = "192.168.1.134"):
+        self.init_db(reset, host)
 
-    def init_db(self, _reset):
+        testdata = [
+            {
+                "name": "coke",
+                "data": {
+                    "position": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "chair",
+                "data": {
+                    "position": {
+                        "x": 1.2,
+                        "y": 0.7,
+                        "z": 0.2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            },
+            {
+                "name": "table",
+                "data": {
+                    "position": {
+                        "x": 1.2,
+                        "y": 0.7,
+                        "z": 0.2
+                    },
+                    "angular": {
+                        "x": 1,
+                        "y": 1,
+                        "z": 2
+                    }
+                }
+            }
+        ]
+        
+        for obj in testdata:
+            self.post_test_data_db(obj["name"], json.dumps(obj["data"]))
+
+        # print(self.get_test_data("chair"))
+
+    def init_db(self, _reset, _host):
         self.db_conn = psycopg2.connect(
-            host = "localhost",
+            # host = "localhost",
+            host = _host,
             database = "mechlmm",
-            user = os.getenv('POSTGRESQL_USER'),
-            password = os.getenv('POSTGRESQL_PASSWORD'),
+            user = "postgres",
+            password = "qwepoi123",
             port = 5432
         )
 
@@ -28,6 +83,18 @@ class PostgresCore:
                     DROP TABLE IF EXISTS video_summaries;
                 """
             )
+            
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS data_log;
+                """
+            )
+
+            self.db_cur.execute(
+                """
+                    DROP TABLE IF EXISTS objects_list;
+                """
+            )
 
             self.db_conn.commit()
 
@@ -37,8 +104,7 @@ class PostgresCore:
                         id SERIAL PRIMARY KEY,
                         name VARCHAR(255) UNIQUE,
                         features TEXT[],
-                        reference_videos INT[][],
-                        summary TEXT
+                        reference_videos INT[][]
                     );
                 """
             )
@@ -55,19 +121,95 @@ class PostgresCore:
                 """
             )
 
+            #### Robot Static Data
+
+            self.db_cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS data_log (
+                    id SERIAL PRIMARY KEY,
+                    timestamp TIMESTAMPTZ NOT NULL,
+                    topic_name VARCHAR(255) NOT NULL,
+                    data TEXT NOT NULL
+                );
+                """
+            )
+
+            #### Testing Database
+            self.db_cur.execute(
+                """
+                CREATE TABLE IF NOT EXISTS objects_list (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(100) NOT NULL,
+                    pose TEXT NOT NULL
+                );
+                """
+            )
+
             self.db_conn.commit()
 
-    def post_objects_map_db(self, _name, _features, _reference_videos, _summary):
+
+    def post_test_data_db(self, _name, _pose):
         insert_query = """
-            INSERT INTO objects_map (name, features, reference_videos, summary) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO objects_list (name, pose) 
+            VALUES (%s, %s)
+        """ 
+
+        self.db_cur.execute(insert_query, (_name, _pose))
+        self.db_conn.commit()
+
+    def get_test_data(self, _name):
+        select_query = """
+            SELECT * 
+            FROM objects_list 
+            WHERE name = %s
+        """
+
+        self.db_cur.execute(select_query, (_name,))
+        result = self.db_cur.fetchone()
+
+        if result:
+            col_names = [desc[0] for desc in self.db_cur.description]
+            return dict(zip(col_names, result))
+        else:
+            return None
+
+    def get_table(self, _table_name):
+        select_query = f"""
+        SELECT * FROM {_table_name}
+        ORDER BY id DESC
+        LIMIT 100
+        """
+
+        self.db_cur.execute(select_query)
+        result = self.db_cur.fetchall()
+
+        if result:
+            col_names = [desc[0] for desc in self.db_cur.description]
+            result_dicts = [dict(zip(col_names, row)) for row in result]
+            return result_dicts
+        else:
+            return None
+
+    def post_data_log_db(self, _timestamp, _topic_name, _data):
+        insert_query = """
+            INSERT INTO data_log (timestamp, topic_name, data) 
+            VALUES (%s, %s, %s)
+        """ 
+
+        self.db_cur.execute(insert_query, (_timestamp, _topic_name, _data))
+        self.db_conn.commit()
+
+    def post_objects_map_db(self, _name, _features, _reference_videos):
+        insert_query = """
+            INSERT INTO objects_map (name, features, reference_videos) 
+            VALUES (%s, %s, %s)
             ON CONFLICT (name) 
             DO UPDATE SET 
                 features = EXCLUDED.features,
                 reference_videos = EXCLUDED.reference_videos
         """
 
-        self.db_cur.execute(insert_query, (_name, _features, _reference_videos, _summary))
+        self.db_cur.execute(insert_query, (_name, _features, _reference_videos))
         self.db_conn.commit()
     
     def get_objects_map_record_by_name_db(self, name):
@@ -169,4 +311,57 @@ class PostgresCore:
 
 if __name__ == "__main__":
     postgres_core = PostgresCore()
-    postgres_core.post_objects_map_db("test_key", ["test", "test2"], [["test", "0", "30"], ["tes2t", "10", "40"]])
+    # testdata = [
+    #     {
+    #         "name": "coke",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     },
+    #     {
+    #         "name": "chair",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1.2,
+    #                 "y": 0.7,
+    #                 "z": 0.2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     },
+    #     {
+    #         "name": "table",
+    #         "data": {
+    #             "position": {
+    #                 "x": 1.2,
+    #                 "y": 0.7,
+    #                 "z": 0.2
+    #             },
+    #             "angular": {
+    #                 "x": 1,
+    #                 "y": 1,
+    #                 "z": 2
+    #             }
+    #         }
+    #     }
+    # ]
+    
+    # for obj in testdata:
+    #     postgres_core.post_test_data_db(obj["name"], json.dumps(obj["data"]))
+    
+
+
+    # postgres_core.post_objects_map_db("test_key", ["test", "test2"], [["test", "0", "30"], ["tes2t", "10", "40"]])

@@ -21,6 +21,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 sudo chown -R $USER ~/.config/gcloud
+
+
+rqt --standalone mechlmm_gui
 ```
 
 ## Postgresql

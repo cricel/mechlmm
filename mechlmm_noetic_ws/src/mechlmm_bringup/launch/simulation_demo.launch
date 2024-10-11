@@ -1,0 +1,72 @@
+<launch>
+    <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [waffle, waffle_pi]"/>
+    
+    <!-- Simulation -->
+    <arg name="gui" default="true"/>
+    <arg name="paused" default="true"/>
+    <arg name="use_sim_time" default="true"/>
+
+    <rosparam file="$(find turtlebot3_manipulation_gazebo)/config/gazebo_controller.yaml" command="load"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find mechlmm_bringup)/worlds/turtlebot3_world.world"/>
+        <!-- <arg name="world_name" value="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
+        <arg name="paused" value="$(arg paused)"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="headless" value="false"/>
+        <arg name="debug" value="false"/>
+    </include>
+
+    <include file="$(find turtlebot3_manipulation_description)/launch/turtlebot3_manipulation_upload.launch">
+        <arg name="model" value="$(arg model)"/>
+    </include>
+
+    <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-urdf -param robot_description -model robot -x -2.0 -y -0.5 -Y 0.0 -J joint1 0.0 -J joint2 0.0 -J joint3 0.0 -J joint4 0.0 -J gripper 0.0 -J gripper_sub 0.0"/>
+    <include file="$(find turtlebot3_manipulation_gazebo)/launch/controller_utils.launch"/>
+
+    <include file="$(find turtlebot3_manipulation_gazebo)/launch/turtlebot3_manipulation_controller.launch"/>
+
+    <include file="$(find turtlebot3_manipulation_moveit_config)/launch/move_group.launch"/>
+
+    <!-- Navigation -->
+    <!-- <arg name="map_file" default="$(find mechlmm_bringup)/maps/sim_map.yaml"/> -->
+    <arg name="map_file" default="$(find mechlmm_bringup)/maps/map.yaml"/>
+    <arg name="move_forward_only" default="false"/>
+
+    <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find turtlebot3_manipulation_description)/urdf/turtlebot3_manipulation_robot.urdf.xacro'" />
+    <param name="robot_description" command="$(arg urdf_file)" />
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <param name="publish_frequency" type="double" value="50.0" />
+    </node>
+
+    <node pkg="laser_filters" type="scan_to_scan_filter_chain" name="laser_filter" output="screen" >
+        <rosparam command="load" file="$(find turtlebot3_manipulation_slam)/config/scan_data_filter.yaml" />
+    </node>  
+
+    <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)"/>
+
+    <include file="$(find turtlebot3_manipulation_navigation)/launch/amcl.launch">
+        <arg name="initial_pose_x"  value="0.0" />
+        <arg name="initial_pose_y"  value="0.0" />
+        <arg name="initial_pose_a"  value="1.5708" />
+    </include>
+
+    <include file="$(find turtlebot3_manipulation_navigation)/launch/move_base.launch">
+        <arg name="model" value="$(arg model)" />
+        <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+    </include>
+
+    <!-- Custom -->
+    <node name="mechlmm_gui" pkg="mechlmm_gui" type="mechlmm_gui" />
+
+    <node name="data_commander" pkg="mechlmm_bringup" type="data_commander.py" />
+    
+    <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
+        args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
+    </node>
+
+    <node name="keyboard_input" pkg="mechlmm_bringup" type="keyboard_ros_listener.py" />
+</launch>

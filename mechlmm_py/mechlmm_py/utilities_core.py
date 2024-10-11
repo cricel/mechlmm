@@ -5,7 +5,11 @@ import ast
 import os
 from datetime import datetime, timedelta
 
+import requests
+
 from .debug_core import DebugCore
+
+from langchain_core.utils.function_calling import convert_to_openai_function
 
 debug_core = DebugCore()
 debug_core.verbose = 3
@@ -89,7 +93,6 @@ def query_video_frame(requested_time):
     
     return frame
 
-
 def frame_to_jpg(frame, filename):
     cv2.imwrite(os.path.join(IMAGES_OUTPUT_PATH, filename), frame)
     debug_core.log_info(f"Frame saved as {os.path.join(IMAGES_OUTPUT_PATH, filename)}")
@@ -115,6 +118,58 @@ def clear_media_storage(_data_path):
     for file in video_files:
         os.remove(os.path.join(_data_path, "videos", file))
         debug_core.log_info(f"Deleted old video file: {file}")
+
+def rest_post_request(_data, _server_url = 'http://192.168.1.134:5001/mechlmm/chat'):
+    """
+    data = {
+        'question': 'question',
+        'schema': schema,
+        'tag': 'tag',
+        'base_img': [base_img_1, base_img_2],
+        'tools': [tools_1, tools_2],
+        'model': "claude"
+    }
+    """
+
+    response = requests.post(_server_url, json = _data)
+
+    if response.status_code == 200:
+        
+        result = response.json()
+        return result
+    else:
+        print('Failed:', response.status_code, response.text)
+        return None
+    
+def basemodel_to_json(_basemodel):
+    return convert_to_openai_function(_basemodel)
+
+def ros_message_to_dict(_msg):
+    if hasattr(_msg, '__slots__'):
+        output = {}
+        for field_name in _msg.__slots__:
+            field_value = getattr(_msg, field_name)
+            output[field_name] = ros_message_to_dict(field_value)
+        return output
+    
+    elif isinstance(_msg, list):
+        return [ros_message_to_dict(item) for item in _msg]
+    
+    else:
+        return _msg
+
+def find_video_in_range(_video_data, _time_data):
+        matching_video_list = []
+        start_time, end_time = _time_data
+        
+        for video in _video_data:
+            video_start_time = video[2]
+            video_end_time = video[3]
+            
+            if video_start_time <= end_time and video_end_time >= start_time:
+                matching_video_list.append(video[1])
+        
+        return matching_video_list
 
 if __name__ == '__main__':
     frame_to_jpg(query_video_frame(7), "test.jpg")
