@@ -7,6 +7,8 @@ from langchain_anthropic import ChatAnthropic
 
 from mechlmm_py import DebugCore, PostgresCore, lmm_function_pool, utilities_core
 
+import os
+
 class MechLMMCore:
     def __init__(self, data_path = "../output"):
         self.ollama_model = ChatOllama(
@@ -38,8 +40,11 @@ class MechLMMCore:
 
         self.mechlmm_model = self.gemini_model
 
+        current_script_path = os.path.abspath(__file__)
+        script_dir = os.path.dirname(current_script_path)
+        relative_path = os.path.join(script_dir, 'rulebook.txt')
         self.rulebook = ""
-        with open('/Users/cricel/Documents/GitHub/llm-smart-home/mechlmm_server/mechlmm_server/rulebook.txt', 'r') as file:
+        with open(relative_path, 'r') as file:
             self.rulebook = file.read()
 
     def chat(self, _question, _tools = None, _base_imgs = None, _schema = None, _tag = None, _model = None):

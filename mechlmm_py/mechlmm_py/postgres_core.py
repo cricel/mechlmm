@@ -6,56 +6,56 @@ class PostgresCore:
     def __init__(self, reset = True, host = "192.168.1.134"):
         self.init_db(reset, host)
 
-        testdata = [
-            {
-                "name": "coke",
-                "data": {
-                    "position": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 2
-                    },
-                    "angular": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 2
-                    }
-                }
-            },
-            {
-                "name": "chair",
-                "data": {
-                    "position": {
-                        "x": 1.2,
-                        "y": 0.7,
-                        "z": 0.2
-                    },
-                    "angular": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 2
-                    }
-                }
-            },
-            {
-                "name": "table",
-                "data": {
-                    "position": {
-                        "x": 1.2,
-                        "y": 0.7,
-                        "z": 0.2
-                    },
-                    "angular": {
-                        "x": 1,
-                        "y": 1,
-                        "z": 2
-                    }
-                }
-            }
-        ]
+        # testdata = [
+        #     {
+        #         "name": "coke",
+        #         "data": {
+        #             "position": {
+        #                 "x": 1,
+        #                 "y": 1,
+        #                 "z": 2
+        #             },
+        #             "angular": {
+        #                 "x": 1,
+        #                 "y": 1,
+        #                 "z": 2
+        #             }
+        #         }
+        #     },
+        #     {
+        #         "name": "chair",
+        #         "data": {
+        #             "position": {
+        #                 "x": 1.2,
+        #                 "y": 0.7,
+        #                 "z": 0.2
+        #             },
+        #             "angular": {
+        #                 "x": 1,
+        #                 "y": 1,
+        #                 "z": 2
+        #             }
+        #         }
+        #     },
+        #     {
+        #         "name": "table",
+        #         "data": {
+        #             "position": {
+        #                 "x": 1.2,
+        #                 "y": 0.7,
+        #                 "z": 0.2
+        #             },
+        #             "angular": {
+        #                 "x": 1,
+        #                 "y": 1,
+        #                 "z": 2
+        #             }
+        #         }
+        #     }
+        # ]
         
-        for obj in testdata:
-            self.post_test_data_db(obj["name"], json.dumps(obj["data"]))
+        # for obj in testdata:
+        #     self.post_test_data_db(obj["name"], json.dumps(obj["data"]))
 
         # print(self.get_test_data("chair"))
 
