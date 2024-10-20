@@ -29,7 +29,7 @@ class MechLMMChatBot:
                 return None
 
     def send_request(self, question):
-        chat_type = "normal"
+        chat_type = "qa"
 
         if len(sys.argv) > 1:
             chat_type = sys.argv[1]
@@ -38,13 +38,13 @@ class MechLMMChatBot:
             'question': question,
         }
         try:
-            response = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat')
+            response = utilities_core.rest_post_request(data, 'http://192.168.1.182:5001/mechlmm/chat')
 
             if(chat_type == "qa"):
-                # response = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat/qa')
+                # response = utilities_core.rest_post_request(data, 'http://192.168.1.182:5001/mechlmm/chat/qa')
                 response = self.chat_knowledge(question)
             if(chat_type == "data"):
-                response = utilities_core.rest_post_request(data, 'http://192.168.1.134:5001/mechlmm/chat/data')
+                response = utilities_core.rest_post_request(data, 'http://192.168.1.182:5001/mechlmm/chat/data')
 
             return response
         except Exception as e:
@@ -65,6 +65,17 @@ class MechLMMChatBot:
                     self.debug_core.log_info(f"MechLMM: {result}")
                     self.play_response(result["result"])
 
+    def run_terminal(self):
+        while True:
+            self.debug_core.log_flash("======= User Input =======")
+
+            user_input = input("How can I help you: ")
+            
+            if user_input.lower() == "exit":
+                self.debug_core.log_flash("Exiting...")
+                break
+            else:
+                self.debug_core.log_info(self.send_request(user_input))
 
     def chat_knowledge(self, _question):
         self.debug_core.log_info("------ chat_text_knowledge ------")
@@ -88,7 +99,7 @@ class MechLMMChatBot:
             # 'tools': [tools_1, tools_2],
             # 'model': "claude"
         }
-        results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+        results = utilities_core.rest_post_request(data, "http://192.168.1.182:5001/mechlmm/chat")
         
 
         
@@ -158,7 +169,7 @@ class MechLMMChatBot:
             # 'tools': [tools_1, tools_2],
             # 'model': "claude"
         }
-        results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+        results = utilities_core.rest_post_request(data, "http://192.168.1.182:5001/mechlmm/chat")
         
 
         self.debug_core.log_key("------ chat_text_knowledge result ------")
@@ -201,7 +212,7 @@ class MechLMMChatBot:
                 # 'tools': [tools_1, tools_2],
                 # 'model': "claude"
             }
-            results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+            results = utilities_core.rest_post_request(data, "http://192.168.1.182:5001/mechlmm/chat")
             
             self.debug_core.log_key("------ 2222 chat_text_knowledge result ------")
             self.debug_core.log_info(results)
@@ -270,7 +281,7 @@ class MechLMMChatBot:
                     # 'tools': [tools_1, tools_2],
                     # 'model': "claude"
                 }
-                results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+                results = utilities_core.rest_post_request(data, "http://192.168.1.182:5001/mechlmm/chat")
 
                 self.debug_core.log_key("------ llm video single frame analyzer output ------")
                 self.debug_core.log_info(int(current_frame/fps))
@@ -315,7 +326,7 @@ class MechLMMChatBot:
             # 'tools': [tools_1, tools_2],
             # 'model': "claude"
         }
-        results = utilities_core.rest_post_request(data, "http://192.168.1.134:5001/mechlmm/chat")
+        results = utilities_core.rest_post_request(data, "http://192.168.1.182:5001/mechlmm/chat")
 
         self.debug_core.log_info("------ ------------------------- ------")
         self.debug_core.log_info("------ llm video analyzer output ------")
@@ -324,4 +335,5 @@ class MechLMMChatBot:
         return results["result"]
 if __name__ == "__main__":
     bot = MechLMMChatBot()
-    bot.run()
+    # bot.run()
+    bot.run_terminal()

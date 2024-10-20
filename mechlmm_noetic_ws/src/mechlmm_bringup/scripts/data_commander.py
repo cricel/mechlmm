@@ -149,9 +149,10 @@ class DataCommander:
 
                 for detected_object in self.lmm_result["objects"]:
                     cv2.rectangle(frame, (int(detected_object["position"][0]), int(detected_object["position"][1])), 
-                                  (int(detected_object["position"][2]), int(detected_object["position"][3])), 
-                                  (0, 255, 0), 
-                                  2)
+                                (int(detected_object["position"][2]), int(detected_object["position"][3])), 
+                                (0, 255, 0), 
+                                2)
+
                     cv2.putText(frame, detected_object["name"], (int(detected_object["position"][0]), int(detected_object["position"][1]) + 2),
                                 cv2.FONT_HERSHEY_SIMPLEX,
                                 1, 
