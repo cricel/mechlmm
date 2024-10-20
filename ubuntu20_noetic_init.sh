@@ -1,8 +1,10 @@
 #!/bin/bash
 sudo apt update; sudo apt install ros-noetic-joint-trajectory-* ros-noetic-control* ros-noetic-dwa-local-planner ros-noetic-turtlebot3* ros-noetic-moveit* ros-noetic-gazebo-*
 
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+
 # Install Mechlmm Py
-pip install -e ../mechlmm_py/.
+pip install -e $SCRIPT_DIR/mechlmm_py/.
 
 # Set environment variable
 echo "========== Env Check =============="
