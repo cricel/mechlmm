@@ -3,7 +3,7 @@ import os
 import json
 
 class PostgresCore:
-    def __init__(self, reset = True, host = "192.168.1.134"):
+    def __init__(self, reset = True, host = os.getenv('MECHLMM_IP')):
         self.init_db(reset, host)
 
         # testdata = [

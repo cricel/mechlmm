@@ -36,6 +36,20 @@ psql
 
 ## postgres=# 
 ALTER USER postgres PASSWORD 'mynewpassword';
+
+## Set remote connection
+
+sudo nano /etc/postgresql/<version>/main/postgresql.conf
+## find the following line and update it
+listen_addresses = '*'
+
+## Update pg_hba.conf
+
+sudo nano /etc/postgresql/<version>/main/pg_hba.conf
+## Add this at the bottom
+host    all             all             0.0.0.0/0            md5
+
+
 ```
 ## Simulation
 ```

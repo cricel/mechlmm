@@ -119,7 +119,7 @@ def clear_media_storage(_data_path):
         os.remove(os.path.join(_data_path, "videos", file))
         debug_core.log_info(f"Deleted old video file: {file}")
 
-def rest_post_request(_data, _server_url = 'http://192.168.1.134:5001/mechlmm/chat'):
+def rest_post_request(_data, _server_url = 'http://' + os.getenv('MECHLMM_IP') + ':5001/mechlmm/chat'):
     """
     data = {
         'question': 'question',

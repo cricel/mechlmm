@@ -6,3 +6,4 @@ pyttsx3
 playsound
 gtts
 langchain_core
+pynput
