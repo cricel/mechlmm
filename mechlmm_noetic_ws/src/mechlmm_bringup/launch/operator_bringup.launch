@@ -1,9 +1,9 @@
 <launch>
     <node name="mechlmm_gui" pkg="mechlmm_gui" type="mechlmm_gui" />
 
+    <node name="data_commander" pkg="mechlmm_bringup" type="data_commander.py" output="screen"/>
+    
     <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
         args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
     </node>
-
-    <node name="keyboard_input" pkg="mechlmm_bringup" type="keyboard_ros_listener.py" />
 </launch>

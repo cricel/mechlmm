@@ -4,6 +4,7 @@ import rospy
 import tf
 # from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from cv_bridge import CvBridge, CvBridgeError
+import cv2
 
 from std_msgs.msg import String, Float32MultiArray
 from geometry_msgs.msg import Twist, Pose
@@ -36,6 +37,8 @@ class DataCommander:
         self.cmd_sub = rospy.Subscriber("/cmd_vel",Twist, self.cmd_callback)
         self.odom_sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
         self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.base_image_callback)
+
+        self.base_processed_image_pub = rospy.Publisher("/camera/rgb/image_raw/detection", Image)
 
         rospy.Timer(rospy.Duration(0.2), self.timer_callback)
         
@@ -143,7 +146,24 @@ class DataCommander:
 
             if frame is not None:
                 self.lmm_result = self.vision_core.frame_analyzer(frame)
-            
+
+                for detected_object in self.lmm_result["objects"]:
+                    cv2.rectangle(frame, (int(detected_object["position"][0]), int(detected_object["position"][1])), 
+                                (int(detected_object["position"][2]), int(detected_object["position"][3])), 
+                                (0, 255, 0), 
+                                2)
+
+                    cv2.putText(frame, detected_object["name"], (int(detected_object["position"][0]), int(detected_object["position"][1]) + 2),
+                                cv2.FONT_HERSHEY_SIMPLEX,
+                                1, 
+                                (255, 0, 0), 
+                                2)
+
+                try:
+                    self.base_processed_image_pub.publish(self.bridge.cv2_to_imgmsg(frame, "bgr8"))
+                except CvBridgeError as e:
+                    print(e)
+
             time.sleep(0.1)
 
     def run(self):
