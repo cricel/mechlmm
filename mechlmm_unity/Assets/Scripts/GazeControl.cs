@@ -4,16 +4,45 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using Unity.Robotics.ROSTCPConnector;
+using RosMessageTypes.Std;
+using RosMessageTypes.Sensor;
+
 public class GazeControl : MonoBehaviour
 {
-    public Camera mainCamera;  // Assign the main camera in the Inspector.
-    public RawImage rawImage;
-    public LayerMask layerMask;  // Specify layers to interact with
-    public GraphicRaycaster raycaster;  // Assign the GraphicRaycaster for your Canvas
-    public EventSystem eventSystem;  // Assign the EventSystem in the scene
+    [Header("Gaze")]
+    [SerializeField]
+    private Camera mainCamera;  // Assign the main camera in the Inspector.
+    [SerializeField]
+    private GraphicRaycaster raycaster;  // Assign the GraphicRaycaster for your Canvas
+    [SerializeField]
+    private EventSystem eventSystem;  // Assign the EventSystem in the scene
+    [SerializeField]
+    private GameObject interactionMarkerPrefab;
+
+    private GameObject currentMarker;
+
+    [Header("Debug")]
+    public Vector2 gazePos = Vector2.zero;
+
+
+    [Header("ROS")]
+    private ROSConnection ros;
+
+    [SerializeField]
+    private string gazeTopicName = "operator_gaze";
+
+    void Start()
+    {
+        ros = ROSConnection.GetOrCreateInstance();
+        ros.RegisterPublisher<Int32MultiArrayMsg>(gazeTopicName);
+    }
 
     void Update()
     {
+        Int32MultiArrayMsg gazeMsg = new Int32MultiArrayMsg();
+        gazeMsg.data = new int[] { -1, -1 };
+
        // Step 1: Create a pointer event for the raycast
         PointerEventData pointerEventData = new PointerEventData(eventSystem);
         pointerEventData.position = new Vector2(Screen.width / 2, Screen.height / 2);  // Center of the screen
@@ -22,16 +51,14 @@ public class GazeControl : MonoBehaviour
         List<RaycastResult> results = new List<RaycastResult>();
         raycaster.Raycast(pointerEventData, results);
 
-        Debug.Log("1");
         // Step 3: Check if the raycast hit the RawImage
         foreach (RaycastResult result in results)
         {
-            RawImage hitRawImage = result.gameObject.GetComponent<RawImage>();
-            if (hitRawImage == rawImage)
+            RawImage detectedRawImage = result.gameObject.GetComponent<RawImage>();
+            if (detectedRawImage != null)
             {
-                Debug.Log("2");
                 // Step 4: Convert the screen point to local coordinates of the RawImage
-                RectTransform rectTransform = rawImage.GetComponent<RectTransform>();
+                RectTransform rectTransform = detectedRawImage.GetComponent<RectTransform>();
                 Vector2 localPoint;
                 RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, pointerEventData.position, mainCamera, out localPoint);
 
@@ -43,23 +70,39 @@ public class GazeControl : MonoBehaviour
                 // Ensure UV coordinates are within bounds (0 to 1)
                 if (normalizedX >= 0 && normalizedX <= 1 && normalizedY >= 0 && normalizedY <= 1)
                 {
-                    Debug.Log("3");
                     // Step 6: Convert UV to pixel coordinates and get the pixel color
-                    Texture2D texture = rawImage.texture as Texture2D;
+                    Texture2D texture = detectedRawImage.texture as Texture2D;
                     if (texture != null)
                     {
-                        Debug.Log("4");
                         int pixelX = Mathf.FloorToInt(normalizedX * texture.width);
                         int pixelY = Mathf.FloorToInt(normalizedY * texture.height);
 
                         Color pixelColor = texture.GetPixel(pixelX, pixelY);
-                        Debug.Log($"Hit Pixel coordinates: ({pixelX}, {pixelY}), Pixel color: {pixelColor}");
+                        // Debug.Log($"Hit Pixel coordinates: ({pixelX}, {pixelY}), Pixel color: {pixelColor}");
+                        gazePos = new Vector2(pixelX, pixelY);
+
+                        gazeMsg.data = new int[] { pixelX, pixelY };
                     }
                 }
+
+                Vector3 worldPosition = rectTransform.TransformPoint(localPoint);
+
+                // If there's already a marker, just move it. Otherwise, instantiate a new one.
+                if (currentMarker == null)
+                {
+                    currentMarker = Instantiate(interactionMarkerPrefab, worldPosition, Quaternion.identity);
+                }
+                else
+                {
+                    currentMarker.transform.position = worldPosition;
+                }
+
             }
         }
 
         Ray ray = mainCamera.ScreenPointToRay(pointerEventData.position);
         Debug.DrawRay(ray.origin, ray.direction * 9999f, Color.green, 1f); // 2 seconds visibility
+
+        ros.Publish(gazeTopicName, gazeMsg);
     }
 }

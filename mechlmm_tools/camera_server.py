@@ -4,7 +4,7 @@ import cv2
 app = Flask(__name__)
 
 def generate_frames():
-    camera = cv2.VideoCapture(2)  # Use the appropriate camera index
+    camera = cv2.VideoCapture(1)  # Use the appropriate camera index
     while True:
         success, frame = camera.read()
         if not success:
