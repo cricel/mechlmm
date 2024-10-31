@@ -447,11 +447,14 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 378657112}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a3ae5c982344f459fb3949f6159ae3c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  boneList: []
+  skeletonTopicName: skeleton_joints
+  publishMessageFrequency: 0.5
 --- !u!114 &1815261755
 MonoBehaviour:
   m_ObjectHideFlags: 0
