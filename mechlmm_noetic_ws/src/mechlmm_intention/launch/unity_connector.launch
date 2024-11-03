@@ -1,0 +1,5 @@
+<launch>
+    <node name="joint_controller" pkg="mechlmm_intention" type="joint_controller.py" output="screen"/>
+
+    <include file="$(find ros_tcp_endpoint)/launch/endpoint.launch"/>
+</launch>
