@@ -12,6 +12,8 @@ from tensorflow.keras.callbacks import TensorBoard
 
 class IntentionCore:
     def __init__(self):
+        self.opencv_cam_index = 1
+
         self.mp_holistic = mp.solutions.holistic # Holistic model
         self.mp_drawing = mp.solutions.drawing_utils # Drawing utilities
 
@@ -82,7 +84,7 @@ class IntentionCore:
                     pass
 
     def skeleton_view(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.opencv_cam_index)
         # Set mediapipe model 
         with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
             while cap.isOpened():
@@ -107,7 +109,7 @@ class IntentionCore:
             cv2.destroyAllWindows()
 
     def training_view(self):
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.opencv_cam_index)
         with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
             
             # NEW LOOP
@@ -209,7 +211,7 @@ class IntentionCore:
         sentence = []
         threshold = 0.8
 
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(self.opencv_cam_index)
         # Set mediapipe model 
         with self.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
             while cap.isOpened():
