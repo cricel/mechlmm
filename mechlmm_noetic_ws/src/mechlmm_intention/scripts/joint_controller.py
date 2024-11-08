@@ -1,19 +1,64 @@
 #!/usr/bin/env python
+
+import sys
+import numpy as np
+
 import rospy
 from std_msgs.msg import String
+from std_msgs.msg import Bool
 from std_msgs.msg import Float32MultiArray
 
+from intention_core import IntentionCore
 
-def callback(data):
-    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
-    
-def listener():
-    rospy.init_node('skeleton_joints_listener', anonymous=True)
+class UnityConnector:
+    def __init__(self):
+        self.skeleton_joints_sub = rospy.Subscriber("skeleton_joints", Float32MultiArray, self.skeleton_joints_callback)
+        self.recording_trigger_sub = rospy.Subscriber("recording_trigger", Bool, self.recording_trigger_callback)
+        self.training_info_sub = rospy.Subscriber("training_info", String, self.training_info_callback)
 
-    rospy.Subscriber("skeleton_joints", Float32MultiArray, callback)
+        self.recording_trigger_pub = rospy.Publisher('recording_trigger', Bool, queue_size=10)
+        # self.training_info_pub = rospy.Publisher('training_info', String, queue_size=10)
 
-    # spin() simply keeps python from exiting until this node is stopped
-    rospy.spin()
+        self.is_recording = False
+        self.trainning_counter = 1
+
+        self.training_info_text = []
+
+        self.it = IntentionCore()
+        # self.it.folder_creation()
+
+    def skeleton_joints_callback(self, _msg):
+        if(self.is_recording):
+            my_array = np.array(_msg.data)
+
+            self.it.add_trainning_data(my_array, 
+                                       self.training_info_text[0], 
+                                       self.training_info_text[1], 
+                                       str(self.trainning_counter))
+            
+
+            self.trainning_counter += 1
+            if(self.trainning_counter >= 30):
+                self.trainning_counter = 1
+                self.is_recording = False
+                self.recording_trigger_pub.publish(self.is_recording)
+
+
+    def recording_trigger_callback(self, _msg):
+        self.is_recording = _msg.data
+
+    def training_info_callback(self, _msg):
+        self.training_info_text = _msg.data.split(",")
+        
+def main(args):
+    uc = UnityConnector()
+
+    rospy.init_node('unity_connector', anonymous=True)
+
+    try:
+        rospy.spin()
+    except KeyboardInterrupt:
+        print("Shutting down")
 
 if __name__ == '__main__':
-    listener()
+    main(sys.argv)
