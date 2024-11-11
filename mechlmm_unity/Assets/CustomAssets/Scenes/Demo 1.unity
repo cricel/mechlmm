@@ -10092,7 +10092,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8bff0824c7d7ef4ebb22b71dd1d0e92, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraImgTopicName: camera/image_raw
+  cameraImgTopicName: /camera/rgb/image_raw
   dummyPublisherStringTopicName: dummy
   publishMessageFrequency: 0.5
   display: {fileID: 2081547153}
