@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using Unity.Robotics.ROSTCPConnector;
 using RosMessageTypes.Std;
 using TMPro;
+using System.Collections;
 
 public class RecordingController : MonoBehaviour
 {
@@ -25,6 +26,8 @@ public class RecordingController : MonoBehaviour
     private Button recordingIcon;
     [SerializeField]
     private TMP_Text titleText;
+    [SerializeField]
+    private TMP_Text countDownText;
     void Start()
     {
         ros = ROSConnection.GetOrCreateInstance();
@@ -63,5 +66,30 @@ public class RecordingController : MonoBehaviour
         ros.Publish(trainingInfoTopicName, actionInfo);
 
         sequenceNum += 1;
+    }
+
+    public void RecordingReady(){
+        StartCoroutine(CountdownCoroutine());
+    }
+
+    private IEnumerator CountdownCoroutine()
+    {
+        countDownText.gameObject.SetActive(true);
+
+        for (int i = 3; i >= 1; i--)
+        {
+            countDownText.text = i.ToString();
+            yield return new WaitForSeconds(1f);
+        }
+
+        BoolMsg trigger = new BoolMsg(!isRecording);
+        ros.Publish(recordingTopicName, trigger);
+
+        StringMsg actionInfo = new StringMsg(actionName + "," + sequenceNum.ToString());
+        ros.Publish(trainingInfoTopicName, actionInfo);
+
+        sequenceNum += 1;
+
+        countDownText.gameObject.SetActive(false);
     }
 }

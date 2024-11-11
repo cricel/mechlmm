@@ -2,7 +2,8 @@ using UnityEngine;
 
 public class CubeButtonController : MonoBehaviour
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    [SerializeField]
+    private RecordingController recordingController;
     void Start()
     {
         
@@ -17,9 +18,13 @@ public class CubeButtonController : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         Debug.Log("--");
+
+        Debug.Log(other.name);
+        recordingController.RecordingReady();
+
         if(other.name == "Trigger Point")
         {
-            Debug.Log(other.name);
+            
         }
     }
 }
