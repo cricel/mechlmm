@@ -58,4 +58,10 @@
         <arg name="model" value="$(arg model)" />
         <arg name="move_forward_only" value="$(arg move_forward_only)"/>
     </include>
+
+    <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
+        args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
+    </node>
+
+    <include file="$(find mechlmm_intention)/launch/unity_connector.launch"/>
 </launch>

@@ -23,4 +23,18 @@ else
   echo "MECHLMM_IP is already set to:=========>" $MECHLMM_IP
 fi
 
+if ! grep -q "alias 'cb'" ~/.bashrc; then
+  echo "alias 'cb'='catkin_make; source devel/setup.bash'" >> ~/.bashrc
+  echo "set catkin_make alias .bashrc"
+else
+  echo "catkin_make alias is already set "
+fi
+
+if ! grep -q "alias 'si'" ~/.bashrc; then
+  echo "alias 'si'='source devel/setup.bash'" >> ~/.bashrc
+  echo "set source devel/setup.bash alias .bashrc"
+else
+  echo "source devel/setup.bash alias is already set "
+fi
+
 source ~/.bashrc
