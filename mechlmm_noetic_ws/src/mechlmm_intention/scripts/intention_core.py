@@ -81,17 +81,20 @@ class IntentionCore:
         # print(self.actions[np.argmax(y_test[4])])
 
     def live_prediction(self, _data):
-        # os.path.join(self.current_file_path, 'action.h5')
-        # self.model.load_weights('action.h5')
-        
-
         self.sequence.append(_data)
         self.sequence = self.sequence[-29:]
         
         if len(self.sequence) == 29:
-            res = self.model.predict(np.expand_dims(self.sequence, axis=0))[0]
-            print(self.actions[np.argmax(res)])
-            return self.actions[np.argmax(res)]
+            # res = self.model.predict(np.expand_dims(self.sequence, axis=0))[0]
+            # print(self.actions[np.argmax(res)])
+            # return self.actions[np.argmax(res)]
+
+            res = self.model.predict(np.expand_dims(self.sequence, axis=0))
+            predicted_classes = np.argmax(res, axis=1)
+            confidence_levels = np.max(res, axis=1)
+
+            for i in range(len(res)):
+                print(f"Prediction: Class {predicted_classes[i]}, Confidence Level: {confidence_levels[i]:.2f}")
         
         return ""
                 
