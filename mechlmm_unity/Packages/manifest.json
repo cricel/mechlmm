@@ -2,6 +2,7 @@
   "dependencies": {
     "com.meta.movement": "https://github.com/oculus-samples/Unity-Movement.git",
     "com.meta.xr.sdk.all": "69.0.1",
+    "com.siemens.ros-sharp": "https://github.com/siemens/ros-sharp.git?path=/com.siemens.ros-sharp",
     "com.unity.collab-proxy": "2.5.2",
     "com.unity.feature.development": "1.0.2",
     "com.unity.multiplayer.center": "1.0.0",
