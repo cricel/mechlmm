@@ -9,8 +9,8 @@
     <rosparam file="$(find turtlebot3_manipulation_gazebo)/config/gazebo_controller.yaml" command="load"/>
 
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <!-- <arg name="world_name" value="$(find mechlmm_bringup)/worlds/turtlebot3_world.world"/> -->
-        <arg name="world_name" value="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/>
+        <arg name="world_name" value="$(find mechlmm_bringup)/worlds/turtlebot3_world.world"/>
+        <!-- <arg name="world_name" value="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
         <arg name="paused" value="$(arg paused)"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="$(arg gui)"/>
@@ -31,8 +31,8 @@
     <include file="$(find turtlebot3_manipulation_moveit_config)/launch/move_group.launch"/>
 
     <!-- Navigation -->
-    <arg name="map_file" default="$(find mechlmm_bringup)/maps/sim_map.yaml"/>
-    <!-- <arg name="map_file" default="$(find mechlmm_bringup)/maps/map.yaml"/> -->
+    <!-- <arg name="map_file" default="$(find mechlmm_bringup)/maps/sim_map.yaml"/> -->
+    <arg name="map_file" default="$(find mechlmm_bringup)/maps/map.yaml"/>
     <arg name="move_forward_only" default="false"/>
 
     <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find turtlebot3_manipulation_description)/urdf/turtlebot3_manipulation_robot.urdf.xacro'" />
@@ -63,5 +63,5 @@
         args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
     </node>
 
-    <include file="$(find mechlmm_intention)/launch/unity_connector.launch"/>
+    <!-- <include file="$(find mechlmm_intention)/launch/unity_connector.launch"/> -->
 </launch>
