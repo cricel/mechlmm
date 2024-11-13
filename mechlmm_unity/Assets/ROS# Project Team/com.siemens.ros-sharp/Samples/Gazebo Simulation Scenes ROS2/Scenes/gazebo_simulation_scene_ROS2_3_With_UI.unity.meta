@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: dbd8659a2b19c7b4ea80bfefa32af853
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Samples/Gazebo Simulation
+    Scenes ROS2/Scenes/gazebo_simulation_scene_ROS2_3_With_UI.unity
+  uploadId: 704976

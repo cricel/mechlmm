@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b2ca82d668b34fd43a014c8ccb4d3b5e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Runtime/Libraries/RosBridgeClient/MessageTypes/ROS2/Moveit/action/PickupGoal.cs
+  uploadId: 704976

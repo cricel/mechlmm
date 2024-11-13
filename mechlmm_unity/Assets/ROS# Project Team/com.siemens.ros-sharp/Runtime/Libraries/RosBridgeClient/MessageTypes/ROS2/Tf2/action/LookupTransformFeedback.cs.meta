@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8256ff450c722c94581d9256d1ec8c1d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Runtime/Libraries/RosBridgeClient/MessageTypes/ROS2/Tf2/action/LookupTransformFeedback.cs
+  uploadId: 704976

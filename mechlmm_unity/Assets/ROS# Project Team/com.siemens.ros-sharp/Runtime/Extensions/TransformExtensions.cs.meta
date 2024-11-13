@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: ac60f49b03340044085c24fcb9875c4c
+timeCreated: 1507114469
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Runtime/Extensions/TransformExtensions.cs
+  uploadId: 704976

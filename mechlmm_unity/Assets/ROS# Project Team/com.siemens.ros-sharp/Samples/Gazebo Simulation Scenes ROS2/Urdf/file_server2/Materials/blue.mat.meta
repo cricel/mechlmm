@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 768a3f95c477dd545887e478093102a2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Samples/Gazebo Simulation
+    Scenes ROS2/Urdf/file_server2/Materials/blue.mat
+  uploadId: 704976

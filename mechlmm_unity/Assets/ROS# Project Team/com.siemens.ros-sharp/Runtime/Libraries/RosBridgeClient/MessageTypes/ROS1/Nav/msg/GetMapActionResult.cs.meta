@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a0073abc2c128f54995216defa88b73e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Runtime/Libraries/RosBridgeClient/MessageTypes/ROS1/Nav/msg/GetMapActionResult.cs
+  uploadId: 704976

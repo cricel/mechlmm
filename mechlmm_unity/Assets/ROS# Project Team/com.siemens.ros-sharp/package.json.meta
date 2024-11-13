@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 22c899db729975a4d9cbd886dd294885
+PackageManifestImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/package.json
+  uploadId: 704976

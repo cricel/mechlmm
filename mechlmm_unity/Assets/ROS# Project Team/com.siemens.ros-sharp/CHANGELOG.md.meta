@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7e2ba89a5d575514b95ce89355d8f863
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/CHANGELOG.md
+  uploadId: 704976

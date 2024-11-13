@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 779c10f0ccf800b408f99ccb1c0dc841
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 107085
+  packageName: ROS#
+  packageVersion: 2.0.0
+  assetPath: Assets/ROS# Project Team/com.siemens.ros-sharp/Samples/Fibonacci Action/FibonacciActionScene.unity
+  uploadId: 704976
