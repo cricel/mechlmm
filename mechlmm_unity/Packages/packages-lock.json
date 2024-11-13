@@ -109,6 +109,13 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.siemens.ros-sharp": {
+      "version": "https://github.com/siemens/ros-sharp.git?path=/com.siemens.ros-sharp",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "2d817a602563e5fbbf3707c156efeb4e6a41a85d"
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.4",
       "depth": 2,
@@ -227,13 +234,6 @@
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
-    },
-    "com.unity.robotics.ros-tcp-connector": {
-      "version": "https://github.com/Unity-Technologies/ROS-TCP-Connector.git?path=/com.unity.robotics.ros-tcp-connector",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "c27f00c6cf750d2d0564349b3039d19aa3925e7c"
     },
     "com.unity.settings-manager": {
       "version": "2.0.1",

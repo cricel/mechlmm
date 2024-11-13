@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Std;
+// using Unity.Robotics.ROSTCPConnector;
+// using RosMessageTypes.Std;
 
 public class SkeletonController : MonoBehaviour
 {
-    private ROSConnection ros;
+    // private ROSConnection ros;
     
     [SerializeField]
     private List<Bone> boneList = new List<Bone>();
@@ -22,8 +22,8 @@ public class SkeletonController : MonoBehaviour
 
     void Start()
     {
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<Float32MultiArrayMsg>(skeletonTopicName);
+        // ros = ROSConnection.GetOrCreateInstance();
+        // ros.RegisterPublisher<Float32MultiArrayMsg>(skeletonTopicName);
 
         boneList = transform.GetComponentsInChildren<Bone>().ToList();
     }
@@ -41,9 +41,9 @@ public class SkeletonController : MonoBehaviour
                 posList.Add(bone.transform.localEulerAngles.z);
             }
 
-            Float32MultiArrayMsg skeletonMsg = new Float32MultiArrayMsg();
-            skeletonMsg.data = posList.ToArray();
-            ros.Publish(skeletonTopicName, skeletonMsg);
+            // Float32MultiArrayMsg skeletonMsg = new Float32MultiArrayMsg();
+            // skeletonMsg.data = posList.ToArray();
+            // ros.Publish(skeletonTopicName, skeletonMsg);
 
             timeElapsed = 0;
         }

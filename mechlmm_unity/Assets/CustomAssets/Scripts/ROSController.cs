@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Std;
-using RosMessageTypes.Sensor;
+// using Unity.Robotics.ROSTCPConnector;
+// using RosMessageTypes.Std;
+// using RosMessageTypes.Sensor;
 
 public class ROSController : MonoBehaviour
 {
-    private ROSConnection ros;
+    // private ROSConnection ros;
     
     [SerializeField]
     private string cameraImgTopicName = "/camera/rgb/image_raw";
@@ -31,10 +31,10 @@ public class ROSController : MonoBehaviour
     void Start()
     {
         // start the ROS connection
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<StringMsg>(dummyPublisherStringTopicName);
+        // ros = ROSConnection.GetOrCreateInstance();
+        // ros.RegisterPublisher<StringMsg>(dummyPublisherStringTopicName);
         
-        ros.Subscribe<ImageMsg>(cameraImgTopicName, RemoteRobotBaseCam);
+        // ros.Subscribe<ImageMsg>(cameraImgTopicName, RemoteRobotBaseCam);
     }
 
     private void Update()
@@ -43,28 +43,28 @@ public class ROSController : MonoBehaviour
 
         if (timeElapsed > publishMessageFrequency)
         {
-            StringMsg cubePos = new StringMsg("Hi");
+            // StringMsg cubePos = new StringMsg("Hi");
 
-            ros.Publish(dummyPublisherStringTopicName, cubePos);
+            // ros.Publish(dummyPublisherStringTopicName, cubePos);
 
             timeElapsed = 0;
         }
     }
 
-    public void RemoteRobotBaseCam(ImageMsg img) {
-        texRos = new Texture2D((int) img.width, (int) img.height, TextureFormat.RGB24, false); // , TextureFormat.RGB24
-        BgrToRgb(img.data);
-        texRos.LoadRawTextureData(img.data);
-        // FlipTextureX(texRos); 
+    // public void RemoteRobotBaseCam(ImageMsg img) {
+    //     texRos = new Texture2D((int) img.width, (int) img.height, TextureFormat.RGB24, false); // , TextureFormat.RGB24
+    //     BgrToRgb(img.data);
+    //     texRos.LoadRawTextureData(img.data);
+    //     // FlipTextureX(texRos); 
 
-        texRos.Apply();
+    //     texRos.Apply();
 
-        RectTransform rectTransform = display.GetComponent<RectTransform>();
-        rectTransform.sizeDelta = new Vector2(texRos.width, texRos.height);
+    //     RectTransform rectTransform = display.GetComponent<RectTransform>();
+    //     rectTransform.sizeDelta = new Vector2(texRos.width, texRos.height);
 
 
-        display.texture = texRos;
-    }
+    //     display.texture = texRos;
+    // }
 
     public void BgrToRgb(byte[] data) {
         for (int i = 0; i < data.Length; i += 3)

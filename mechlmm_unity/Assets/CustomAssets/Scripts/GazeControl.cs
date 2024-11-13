@@ -4,9 +4,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-using Unity.Robotics.ROSTCPConnector;
-using RosMessageTypes.Std;
-using RosMessageTypes.Sensor;
+// using Unity.Robotics.ROSTCPConnector;
+// using RosMessageTypes.Std;
+// using RosMessageTypes.Sensor;
 
 public class GazeControl : MonoBehaviour
 {
@@ -26,22 +26,22 @@ public class GazeControl : MonoBehaviour
     public Vector2 gazePos = Vector2.zero;
 
 
-    [Header("ROS")]
-    private ROSConnection ros;
+    // [Header("ROS")]
+    // private ROSConnection ros;
 
     [SerializeField]
     private string gazeTopicName = "operator_gaze";
 
     void Start()
     {
-        ros = ROSConnection.GetOrCreateInstance();
-        ros.RegisterPublisher<Int32MultiArrayMsg>(gazeTopicName);
+        // ros = ROSConnection.GetOrCreateInstance();
+        // ros.RegisterPublisher<Int32MultiArrayMsg>(gazeTopicName);
     }
 
     void Update()
     {
-        Int32MultiArrayMsg gazeMsg = new Int32MultiArrayMsg();
-        gazeMsg.data = new int[] { -1, -1 };
+        // Int32MultiArrayMsg gazeMsg = new Int32MultiArrayMsg();
+        // gazeMsg.data = new int[] { -1, -1 };
 
        // Step 1: Create a pointer event for the raycast
         PointerEventData pointerEventData = new PointerEventData(eventSystem);
@@ -81,7 +81,7 @@ public class GazeControl : MonoBehaviour
                         // Debug.Log($"Hit Pixel coordinates: ({pixelX}, {pixelY}), Pixel color: {pixelColor}");
                         gazePos = new Vector2(pixelX, pixelY);
 
-                        gazeMsg.data = new int[] { pixelX, pixelY };
+                        // gazeMsg.data = new int[] { pixelX, pixelY };
                     }
                 }
 
@@ -103,6 +103,6 @@ public class GazeControl : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(pointerEventData.position);
         Debug.DrawRay(ray.origin, ray.direction * 9999f, Color.green, 1f); // 2 seconds visibility
 
-        ros.Publish(gazeTopicName, gazeMsg);
+        // ros.Publish(gazeTopicName, gazeMsg);
     }
 }
