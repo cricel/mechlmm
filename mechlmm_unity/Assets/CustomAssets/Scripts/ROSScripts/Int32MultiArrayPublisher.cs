@@ -9,24 +9,18 @@ namespace RosSharp.RosBridgeClient
         protected override void Start()
         {
             base.Start();
-            InitializeMessage();
+            message.data = new int[] { -1, -1 };
         }
-        private void InitializeMessage()
-        {
-            message = new MessageTypes.Std.Int32MultiArray
-            {
-                data = DoubleData
-            };
-        }
+
         private void FixedUpdate()
         {
             UpdateMessage();
         }
         public void UpdateMessage()
         {
-            message.data = DoubleData;
-            Publish(message);
-            Debug.Log("Published message: " + message.data);
+            // message.data = DoubleData;
+            // Publish(message);
+            // Debug.Log("Published message: " + message.data);
         }
     }
 }
