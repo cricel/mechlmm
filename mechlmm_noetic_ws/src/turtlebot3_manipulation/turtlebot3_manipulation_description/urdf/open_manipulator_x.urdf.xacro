@@ -281,11 +281,11 @@
         <box size="0.01 0.01 0.01" />
       </geometry>
     </visual> -->
-    <inertial>
+    <!-- <inertial>
       <mass value="0.1"/>
       <origin xyz="0 0 0"/>
       <inertia ixx="0.01" iyy="0.01" izz="0.01" ixy="0" ixz="0" iyz="0"/>
-    </inertial>
+    </inertial> -->
 
   </link>
 

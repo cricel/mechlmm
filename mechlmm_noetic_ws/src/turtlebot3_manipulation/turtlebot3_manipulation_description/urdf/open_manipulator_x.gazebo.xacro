@@ -63,7 +63,7 @@
   <!-- camera -->
 
   <gazebo reference="hand_camera_link">
-    <sensor name="test_camera" type="depth">
+    <sensor name="hand_camera" type="depth">
       <update_rate>20</update_rate>
       <camera>
         <horizontal_fov>1.047198</horizontal_fov>
@@ -77,16 +77,16 @@
           <far>3</far>
         </clip>
       </camera>
-      <plugin name="test_controller" filename="libgazebo_ros_openni_kinect.so">
+      <plugin name="hand_camera_controller" filename="libgazebo_ros_openni_kinect.so">
         <baseline>0.2</baseline>
         <alwaysOn>true</alwaysOn>
         <updateRate>1.0</updateRate>
-        <cameraName>test_ir</cameraName>
-        <imageTopicName>/test/color/image_raw</imageTopicName>
-        <cameraInfoTopicName>/test/color/camera_info</cameraInfoTopicName>
-        <depthImageTopicName>/test/depth/image_raw</depthImageTopicName>
-        <depthImageInfoTopicName>/test/depth/camera_info</depthImageInfoTopicName>
-        <pointCloudTopicName>/test/depth/points</pointCloudTopicName>
+        <cameraName>hand_camera_ir</cameraName>
+        <imageTopicName>/camera/hand/color/image_raw</imageTopicName>
+        <cameraInfoTopicName>/camera/hand/color/camera_info</cameraInfoTopicName>
+        <depthImageTopicName>/camera/hand/depth/image_raw</depthImageTopicName>
+        <depthImageInfoTopicName>/camera/hand/depth/camera_info</depthImageInfoTopicName>
+        <pointCloudTopicName>/camera/hand/depth/points</pointCloudTopicName>
         <frameName>hand_camera_link</frameName>
         <pointCloudCutoff>0.5</pointCloudCutoff>
         <pointCloudCutoffMax>3.0</pointCloudCutoffMax>

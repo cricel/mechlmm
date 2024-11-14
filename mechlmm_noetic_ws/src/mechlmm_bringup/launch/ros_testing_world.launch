@@ -31,8 +31,8 @@
     <include file="$(find turtlebot3_manipulation_moveit_config)/launch/move_group.launch"/>
 
     <!-- Navigation -->
-    <!-- <arg name="map_file" default="$(find mechlmm_bringup)/maps/sim_map.yaml"/> -->
     <arg name="map_file" default="$(find mechlmm_bringup)/maps/map.yaml"/>
+    <!-- <arg name="map_file" default="$(find mechlmm_bringup)/maps/sim_map.yaml"/> -->
     <arg name="move_forward_only" default="false"/>
 
     <arg name="urdf_file" default="$(find xacro)/xacro --inorder '$(find turtlebot3_manipulation_description)/urdf/turtlebot3_manipulation_robot.urdf.xacro'" />
@@ -59,9 +59,9 @@
         <arg name="move_forward_only" value="$(arg move_forward_only)"/>
     </include>
 
-    <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
+    <!-- <node name="mech_rviz" pkg="rviz" type="rviz" respawn="false"
         args="-d $(find mechlmm_bringup)/rviz/robot_config.rviz" output="screen">
-    </node>
+    </node> -->
 
-    <!-- <include file="$(find mechlmm_intention)/launch/unity_connector.launch"/> -->
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
 </launch>
