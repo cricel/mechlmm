@@ -7,12 +7,15 @@ from datetime import datetime, timedelta
 
 import requests
 
-from .debug_core import DebugCore
+from mechlmm_py.debug_core import DebugCore
 
 from langchain_core.utils.function_calling import convert_to_openai_function
 
 debug_core = DebugCore()
 debug_core.verbose = 3
+
+VIDEOS_OUTPUT_PATH="./"
+IMAGES_OUTPUT_PATH="./"
 
 def opencv_frame_to_base64(_frame):
     _, buffer = cv2.imencode('.jpg', _frame)

@@ -15,6 +15,8 @@ dependencies = [
     "SpeechRecognition>=3.10.0",
     "pyttsx3>=2.98",
     "pyaudio>=0.2.14",
+    "psycopg2>=2.9.10",
+    "langchain-core>=0.3.66",
 ]
 
 [build-system]
