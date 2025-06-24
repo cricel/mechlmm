@@ -5,7 +5,10 @@
 # Setup
 ```
 # Get Source Code
-git clone https://github.com/cricel/llm-smart-home.git
+git clone https://github.com/cricel/mechlmm.git
+
+
+
 
 # Set MechLLM Core Library as global package
 # Add following into `~/.bashrc`

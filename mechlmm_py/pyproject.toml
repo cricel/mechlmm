@@ -1,0 +1,19 @@
+[project]
+name = "mechlmm-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "cricel", email = "cricel.design@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "gtts>=2.5.4",
+    "opencv-python>=4.11.0.86",
+    "playsound==1.2.2",
+    "termcolor>=3.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
