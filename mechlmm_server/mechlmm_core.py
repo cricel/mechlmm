@@ -5,7 +5,7 @@ from langchain_ollama import ChatOllama
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_anthropic import ChatAnthropic
 
-from mechlmm_py import DebugCore, PostgresCore, lmm_function_pool, utilities_core
+from mechlmm_py import DebugCore, DB_Core, lmm_function_pool, utilities_core
 
 import os
 
@@ -22,13 +22,13 @@ class MechLMMCore:
             temperature=0,
         )
 
-        self.gemini_model = ChatGoogleGenerativeAI(
-            model="gemini-1.5-pro",
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-        )
+        # self.gemini_model = ChatGoogleGenerativeAI(
+        #     model="gemini-2.5-flash",
+        #     temperature=0,
+        #     max_tokens=None,
+        #     timeout=None,
+        #     max_retries=2,
+        # )
         
         self.claude_model = ChatAnthropic(
             model='claude-3-opus-20240229'
@@ -36,9 +36,9 @@ class MechLMMCore:
 
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
-        self.postgres_core = PostgresCore(False, "localhost")
+        self.db_core = DB_Core(False, "localhost")
 
-        self.mechlmm_model = self.gemini_model
+        self.mechlmm_model = self.openai_model
 
         current_script_path = os.path.abspath(__file__)
         script_dir = os.path.dirname(current_script_path)
@@ -62,7 +62,7 @@ class MechLMMCore:
                 return "Claude did not support image", _tag, "Error"
             self.mechlmm_model = self.claude_model
         else:
-            self.mechlmm_model = self.gemini_model
+            self.mechlmm_model = self.openai_model
 
         ## check schema
         if(_schema):
@@ -129,7 +129,7 @@ class MechLMMCore:
     
     def chat_datalog(self, _msg):
         self.debug_core.log_info("------ chat_datalog ------")
-        db_item_list = self.postgres_core.get_table("data_log")
+        db_item_list = self.db_core.get_table("data_log")
 
         query = f"""
                     {_msg}
@@ -148,8 +148,8 @@ class MechLMMCore:
 
     def chat_knowledge(self, _question):
         self.debug_core.log_info("------ chat_text_knowledge ------")
-        db_item_list = self.postgres_core.get_objects_map_name_list_db()
-        db_video_list = self.postgres_core.get_video_summary_list_db()
+        db_item_list = self.db_core.get_objects_map_name_list_db()
+        db_video_list = self.db_core.get_video_summary_list_db()
 
         print(db_video_list)
         print(db_item_list)
@@ -186,11 +186,11 @@ class MechLMMCore:
         object_db_list = []
 
         # if(results["items"][0] == "robot"):
-        #     test_db = self.postgres_core.get_table("data_log")
+        #     test_db = self.db_core.get_table("data_log")
         #     print(test_db)
 
         for result in results["items"]:
-            _record_result = self.postgres_core.get_objects_map_record_by_name_db(result)
+            _record_result = self.db_core.get_objects_map_record_by_name_db(result)
             object_db_list.append(_record_result)
             self.debug_core.log_key("---++++++----")
             self.debug_core.log_key(result)
@@ -207,7 +207,7 @@ class MechLMMCore:
         video_summary_list = []
 
         for video in video_list:
-            _record_result = self.postgres_core.get_video_summary_record_by_name_db(video)
+            _record_result = self.db_core.get_video_summary_record_by_name_db(video)
             video_summary_list.append(_record_result["summary"])
 
         self.debug_core.log_key("------ list of knowledge used ------")

@@ -1,7 +1,0 @@
-langchain_core
-langchain_ollama
-langchain_community
-langchain_openai
-langchain_google_genai
-langchain_anthropic
-flask

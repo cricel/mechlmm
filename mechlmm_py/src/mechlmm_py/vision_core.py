@@ -1,9 +1,9 @@
 import cv2
 
-from .postgres_core import PostgresCore
-from .debug_core import DebugCore
-from . import utilities_core
-from . import lmm_function_pool
+from mechlmm_py.db_core import DB_Core
+from mechlmm_py.debug_core import DebugCore
+import mechlmm_py.utilities_core as utilities_core
+import mechlmm_py.lmm_function_pool as lmm_function_pool
 
 import os
 import time
@@ -11,7 +11,7 @@ from datetime import datetime
 
 class VisionCore:
     def __init__(self, _data_path = "../output"):
-        self.postgres_core = PostgresCore()
+        self.db_core = DB_Core()
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
 
@@ -66,7 +66,7 @@ class VisionCore:
 
                 self.debug_core.log_key("------ video summary-----")
                 self.debug_core.log_info(query_result['result'])
-                self.postgres_core.post_video_summary_db(query_result['tag']["filename"], 
+                self.db_core.post_video_summary_db(query_result['tag']["filename"], 
                                             query_result['result']
                                             )
                 self.frame_context_list = []
@@ -77,7 +77,7 @@ class VisionCore:
                 final_features = None
                 final_reference_videos = []
                 # final_summary = ""
-                _db_record = self.postgres_core.get_objects_map_record_by_name_db(object["name"])
+                _db_record = self.db_core.get_objects_map_record_by_name_db(object["name"])
                 self.debug_core.log_key("------ start processing frame------")
                 self.debug_core.log_key(object["name"])
 
@@ -96,7 +96,7 @@ class VisionCore:
                 self.debug_core.log_key(final_features)
                 self.debug_core.log_key(final_reference_videos)
                 # self.debug_core.log_key(final_summary)
-                self.postgres_core.post_objects_map_db(object["name"], final_features, final_reference_videos)
+                self.db_core.post_objects_map_db(object["name"], final_features, final_reference_videos)
 
         except Exception as e:
                     self.debug_core.log_warning("------ Error on Video Processing  ------")
@@ -180,7 +180,7 @@ class VisionCore:
         if current_time - self.start_time >= self.saved_video_duration or self.current_video_writer is None:
             if self.current_video_writer is not None:
                 self.current_video_writer.release()
-                self.postgres_core.post_video_record_db(self.current_video_filename, 
+                self.db_core.post_video_record_db(self.current_video_filename, 
                                                    self.start_time, 
                                                    current_time
                                                    )

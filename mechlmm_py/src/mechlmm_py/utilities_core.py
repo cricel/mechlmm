@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import requests
 
 from mechlmm_py.debug_core import DebugCore
+from mechlmm_py.config import settings
 
 from langchain_core.utils.function_calling import convert_to_openai_function
 
@@ -122,7 +123,7 @@ def clear_media_storage(_data_path):
         os.remove(os.path.join(_data_path, "videos", file))
         debug_core.log_info(f"Deleted old video file: {file}")
 
-def rest_post_request(_data, _server_url = 'http://' + os.getenv('MECHLMM_IP') + ':5001/mechlmm/chat'):
+def rest_post_request(_data, _server_url = f"http://{settings.mechlmm_ip}:5001/mechlmm/chat"):
     """
     data = {
         'question': 'question',
@@ -175,4 +176,4 @@ def find_video_in_range(_video_data, _time_data):
         return matching_video_list
 
 if __name__ == '__main__':
-    frame_to_jpg(query_video_frame(7), "test.jpg")
+    pass

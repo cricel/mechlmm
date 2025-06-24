@@ -1,9 +1,0 @@
-opencv-python
-SpeechRecognition
-termcolor
-psycopg2
-pyttsx3
-playsound
-gtts
-langchain_core
-pynput
