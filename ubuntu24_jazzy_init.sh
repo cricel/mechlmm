@@ -22,13 +22,6 @@ else
   echo "TURTLEBOT3_MODEL is already set to:=========>" $TURTLEBOT3_MODEL
 fi
 
-if ! grep -q 'export MECHLMM_IP' ~/.bashrc; then
-  echo 'export MECHLMM_IP="172.21.255.131"' >> ~/.bashrc
-  echo "MECHLMM_IP environment variable added to .bashrc"
-else
-  echo "MECHLMM_IP is already set to:=========>" $MECHLMM_IP
-fi
-
 if ! grep -q "alias cb" ~/.bashrc; then
   echo "alias cb='colcon build --symlink-install && source install/setup.bash'" >> ~/.bashrc
   echo "set colcon build alias => .bashrc"
