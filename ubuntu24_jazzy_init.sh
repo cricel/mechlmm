@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# sudo apt update; sudo apt install postgresql ros-jazzy-turtlebot3* 
+sudo apt update; sudo apt install postgresql ros-jazzy-turtlebot3* ros-jazzy-open-manipulator-*
 
 
 
