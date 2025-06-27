@@ -2,6 +2,7 @@ import sys
 import time
 import cv2
 import threading
+import os
 
 import rclpy
 from rclpy.node import Node
@@ -15,10 +16,13 @@ from langchain_core.utils.function_calling import convert_to_openai_function
 from typing import Optional, List
 from pydantic import BaseModel, Field
 import requests
+from dotenv import load_dotenv
 
 from mechlmm_py import utilities_core, lmm_function_pool, VisionCore, DebugCore
 import function_pool_lmm_declaration
 from function_pool_definition import FunctionPoolDefinition
+
+load_dotenv()
 
 class ImageConverter(Node):
     def __init__(self):
@@ -47,7 +51,7 @@ class ImageConverter(Node):
         )
         self.base_image_sub = self.create_subscription(
             Image, 
-            "/camera/rgb/image_raw", 
+            "/camera/image_raw", 
             self.base_callback, 
             10
         )
@@ -89,7 +93,10 @@ class ImageConverter(Node):
             if (self.head_cam is None or self.hand_cam is None or self.base_cam is None):
                 return
 
-            url = 'http://192.168.1.134:5001/mechlmm/chat'
+            # Get Flask endpoint configuration from environment variables
+            flask_ip = os.getenv('FLASK_ENDPOINT_IP', '192.168.1.134')  # Default fallback
+            flask_port = os.getenv('FLASK_ENDPOINT_PORT', '5001')  # Default fallback
+            url = f'http://{flask_ip}:{flask_port}/mechlmm/chat'
             
             hand_image_url = utilities_core.opencv_frame_to_base64(self.hand_cam)
             head_image_url = utilities_core.opencv_frame_to_base64(self.head_cam)

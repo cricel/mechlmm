@@ -1,4 +1,4 @@
-# from .vision_core import VisionCore
+from .vision_core import VisionCore
 from .debug_core import DebugCore
 from .stt_core import STTCore
 from .tts_core import TTS_Core

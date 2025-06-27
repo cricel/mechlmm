@@ -6,6 +6,7 @@ dependencies = [
     "langchain-core>=0.3.66",
     "mechlmm-py",
     "numpy<2.0",
+    "python-dotenv>=1.0.0",
 ]
 
 [tool.uv.sources]
