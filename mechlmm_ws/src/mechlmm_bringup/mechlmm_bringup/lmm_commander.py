@@ -82,7 +82,7 @@ class ImageConverter(Node):
         self.lmm_result = None
         
     def timer_callback(self):
-        # self.llm_chat_image()
+        self.llm_chat_image()
         pass
 
     def llm_chat_image(self):
@@ -90,16 +90,21 @@ class ImageConverter(Node):
             self.img_query = True
 
             self.get_logger().info("----")
-            if (self.head_cam is None or self.hand_cam is None or self.base_cam is None):
+            # if (self.head_cam is None or self.hand_cam is None or self.base_cam is None):
+            #     return
+
+            if (self.base_cam is None):
                 return
 
+            self.get_logger().info("----1")
             # Get Flask endpoint configuration from environment variables
-            flask_ip = os.getenv('FLASK_ENDPOINT_IP', '192.168.1.134')  # Default fallback
-            flask_port = os.getenv('FLASK_ENDPOINT_PORT', '5001')  # Default fallback
-            url = f'http://{flask_ip}:{flask_port}/mechlmm/chat'
+            mechlmm_server_ip = os.getenv('MECHLMM_SERVER_IP')  # Default fallback
+            mechlmm_server_port = os.getenv('MECHLMM_SERVER_PORT')  # Default fallback
+            url = f'http://{mechlmm_server_ip}:{mechlmm_server_port}/mechlmm/chat'
             
-            hand_image_url = utilities_core.opencv_frame_to_base64(self.hand_cam)
-            head_image_url = utilities_core.opencv_frame_to_base64(self.head_cam)
+            self.get_logger().info("----2")
+            # hand_image_url = utilities_core.opencv_frame_to_base64(self.hand_cam)
+            # head_image_url = utilities_core.opencv_frame_to_base64(self.head_cam)
             base_image_url = utilities_core.opencv_frame_to_base64(self.base_cam)
 
             query = """
@@ -116,7 +121,8 @@ class ImageConverter(Node):
                 'question': query,
                 # 'schema': dict_schema,
                 'tag': 'head_callback',
-                'base_img': [hand_image_url, head_image_url, base_image_url],
+                # 'base_img': [hand_image_url, head_image_url, base_image_url],
+                'base_img': [base_image_url],
                 'tools': [convert_to_openai_function(function_pool_lmm_declaration.arm_end_effector_control),
                         #   convert_to_openai_function(function_pool_lmm_declaration.arm_end_effector_rotation_control),
                           convert_to_openai_function(function_pool_lmm_declaration.trigger_gripper),
@@ -124,8 +130,10 @@ class ImageConverter(Node):
                           ]
             }
 
+            self.get_logger().info("----3")     
             response = requests.post(url, json=data)
 
+            self.get_logger().info("----4")
             if response.status_code == 200:
                 _result = response.json()
                 self.get_logger().info(f'Success: \n{_result}')
