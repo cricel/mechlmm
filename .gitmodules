@@ -2,3 +2,7 @@
 	path = mechlmm_ws/src/turtlebot3_manipulation
 	url = https://github.com/ROBOTIS-GIT/turtlebot3_manipulation.git
 	branch = jazzy
+[submodule "mechlmm_ws/src/ros2cli"]
+	path = mechlmm_ws/src/ros2cli
+	url = https://github.com/ros2/ros2cli.git
+	branch = jazzy
