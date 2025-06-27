@@ -24,6 +24,9 @@ setup(
     entry_points={
         'console_scripts': [
             'robot_core = mechlmm_bringup.robot_core:main',
+            'lmm_commander = mechlmm_bringup.lmm_commander:main',
+            'function_pool_definition = mechlmm_bringup.function_pool_definition:main',
+            'test = mechlmm_bringup.test:main',
         ],
     },
 )

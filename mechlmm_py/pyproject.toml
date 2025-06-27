@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "cricel", email = "cricel.design@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "gtts>=2.5.4",
     "opencv-python>=4.11.0.86",

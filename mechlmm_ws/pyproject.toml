@@ -1,0 +1,12 @@
+[project]
+name = "mechlmm-ws"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "langchain-core>=0.3.66",
+    "mechlmm-py",
+    "numpy<2.0",
+]
+
+[tool.uv.sources]
+mechlmm-py = { path = "../mechlmm_py", editable = true }

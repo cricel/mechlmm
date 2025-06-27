@@ -1,11 +1,11 @@
-#!/usr/bin/env python
-
 import sys
 import time
-import rospy
 import cv2
-
 import threading
+
+import rclpy
+from rclpy.node import Node
+from rclpy.timer import Timer
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -20,8 +20,10 @@ from mechlmm_py import utilities_core, lmm_function_pool, VisionCore, DebugCore
 import function_pool_lmm_declaration
 from function_pool_definition import FunctionPoolDefinition
 
-class image_converter:
+class ImageConverter(Node):
     def __init__(self):
+        super().__init__('image_converter')
+        
         self.vision_core = VisionCore()
         self.debug_core = DebugCore()
         self.debug_core.verbose = 3
@@ -29,14 +31,32 @@ class image_converter:
         self.function_pool_definition = FunctionPoolDefinition()
 
         self.bridge = CvBridge()
-        self.hand_image_sub = rospy.Subscriber("/camera/hand/image_raw",Image,self.hand_callback)
-        self.head_image_sub = rospy.Subscriber("/camera/head/image_raw",Image,self.head_callback)
-        self.base_image_sub = rospy.Subscriber("/camera/rgb/image_raw",Image,self.base_callback)
+        
+        # Create subscribers
+        self.hand_image_sub = self.create_subscription(
+            Image, 
+            "/camera/hand/image_raw", 
+            self.hand_callback, 
+            10
+        )
+        self.head_image_sub = self.create_subscription(
+            Image, 
+            "/camera/head/image_raw", 
+            self.head_callback, 
+            10
+        )
+        self.base_image_sub = self.create_subscription(
+            Image, 
+            "/camera/rgb/image_raw", 
+            self.base_callback, 
+            10
+        )
 
-        # self.lmm_command_sub = rospy.Subscriber("/lmm/command",String, self.lmm_command_callback)
-        self.lmm_command_pub = rospy.Publisher('/lmm/command', String, queue_size=10)
+        # Create publisher
+        self.lmm_command_pub = self.create_publisher(String, '/lmm/command', 10)
 
-        rospy.Timer(rospy.Duration(1), self.timer_callback)
+        # Create timer
+        self.timer = self.create_timer(1.0, self.timer_callback)
 
         self.img_query = False
 
@@ -57,7 +77,7 @@ class image_converter:
 
         self.lmm_result = None
         
-    def timer_callback(self, msg):
+    def timer_callback(self):
         # self.llm_chat_image()
         pass
 
@@ -65,7 +85,7 @@ class image_converter:
         if(not self.img_query):
             self.img_query = True
 
-            print("----")
+            self.get_logger().info("----")
             if (self.head_cam is None or self.hand_cam is None or self.base_cam is None):
                 return
 
@@ -101,23 +121,25 @@ class image_converter:
 
             if response.status_code == 200:
                 _result = response.json()
-                print('Success: \n', _result)
+                self.get_logger().info(f'Success: \n{_result}')
                 if(_result['type'] == 'tools'):
                     for func in _result['result']:
                         selected_tool = self.llm_tools_map[func['name'].lower()]
                         selected_tool(func['args'])
 
-                    self.lmm_command_pub.publish("llm send")
+                    msg = String()
+                    msg.data = "llm send"
+                    self.lmm_command_pub.publish(msg)
             else:
-                print('Failed:', response.status_code, response.text)
+                self.get_logger().error(f'Failed: {response.status_code} {response.text}')
 
             self.img_query = False
 
-    def hand_callback(self,data):
+    def hand_callback(self, data):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
-            print(e)
+            self.get_logger().error(f'CvBridgeError: {e}')
 
         self.hand_cam = cv_image
 
@@ -125,7 +147,7 @@ class image_converter:
         try:
             cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
         except CvBridgeError as e:
-            print(e)
+            self.get_logger().error(f'CvBridgeError: {e}')
 
         self.head_cam = cv_image
     
@@ -141,7 +163,7 @@ class image_converter:
                 self.latest_frame = cv_image.copy()
 
         except CvBridgeError as e:
-            print(e)
+            self.get_logger().error(f'CvBridgeError: {e}')
 
         self.base_cam = cv_image
 
@@ -158,14 +180,19 @@ class image_converter:
             
             time.sleep(0.1)
 
-def main(args):
-    rospy.init_node('image_converter', anonymous=True)
-    ic = image_converter()
+def main(args=None):
+    rclpy.init(args=args)
+    
+    ic = ImageConverter()
+    
     try:
-        rospy.spin()
+        rclpy.spin(ic)
     except KeyboardInterrupt:
-        print("Shutting down")
-    cv2.destroyAllWindows()
+        ic.get_logger().info("Shutting down")
+    finally:
+        ic.destroy_node()
+        rclpy.shutdown()
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

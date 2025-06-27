@@ -3,6 +3,8 @@
 ![](./etc/header.gif)
 
 # Setup
+uv add --editable ../mypackage
+
 ```
 # Get Source Code
 git clone https://github.com/cricel/mechlmm.git
